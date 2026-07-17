@@ -1,391 +1,195 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GrabSplit — 鎌倉の夏 Kamakura Edition</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@400;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{background:#1a1520;overflow:hidden;width:100vw;height:100vh;font-family:'Inter',-apple-system,sans-serif;color:#f0eff4}
-        #c{display:block;width:100%;height:100%;position:absolute;top:0;left:0;z-index:1}
-        .vig{position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(circle,transparent 55%,rgba(0,0,0,0.4)100%);z-index:2;pointer-events:none}
-
-        /* Toggle Button */
-        .toggle-calc{
-            position:absolute;top:18px;right:18px;z-index:20;
-            background:rgba(0,0,0,0.35);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-            border:1px solid rgba(255,255,255,0.1);border-radius:14px;
-            color:#fff;font-family:'Inter',sans-serif;font-size:13px;font-weight:700;
-            padding:12px 20px;cursor:pointer;transition:all .25s;
-            display:flex;align-items:center;gap:8px;
-        }
-        .toggle-calc:hover{background:rgba(0,0,0,0.5);border-color:rgba(255,255,255,0.2)}
-        .toggle-calc.active{background:rgba(0,177,79,0.2);border-color:rgba(0,177,79,0.3)}
-
-        /* Calculator Panel */
-        .calc-panel{
-            position:absolute;top:0;right:0;bottom:0;width:440px;z-index:15;
-            background:rgba(12,15,20,0.82);backdrop-filter:blur(25px);-webkit-backdrop-filter:blur(25px);
-            border-left:1px solid rgba(255,255,255,0.06);
-            transform:translateX(100%);transition:transform .4s cubic-bezier(.16,1,.3,1);
-            display:flex;flex-direction:column;
-            box-shadow:-20px 0 60px rgba(0,0,0,0.4);
-        }
-        .calc-panel.open{transform:translateX(0)}
-
-        .calc-header{
-            padding:20px 24px 16px;border-bottom:1px solid rgba(255,255,255,0.06);
-            display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
-        }
-        .calc-logo{font-size:22px;font-weight:800;letter-spacing:-0.5px}
-        .calc-logo .gr{color:#00d25e}
-        .calc-sub{font-size:10px;color:rgba(255,255,255,0.35);margin-top:2px;letter-spacing:1px;text-transform:uppercase}
-        .calc-close{background:transparent;border:none;color:rgba(255,255,255,0.4);font-size:22px;cursor:pointer;padding:4px 8px}
-        .calc-close:hover{color:#fff}
-
-        .calc-body{flex:1;overflow-y:auto;padding:20px 24px 30px}
-        .calc-body::-webkit-scrollbar{width:5px}
-        .calc-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:3px}
-
-        /* Cards inside panel */
-        .gc{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:14px;padding:16px;margin-bottom:12px}
-        .gc-title{font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;display:flex;align-items:center;gap:6px}
-
-        .input-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;animation:fadeIn .25s ease}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
-        .pnum{width:24px;height:24px;background:rgba(0,177,79,0.1);color:#00d25e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
-        .iname,.iprice{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px 12px;color:#fff;font-family:inherit;font-size:13px;outline:none;transition:border-color .2s}
-        .iname:focus,.iprice:focus{border-color:#00b14f}
-        .iname{flex:1;min-width:0}
-        .iprice{width:100px;text-align:right}
-        .btn-rm{width:24px;height:24px;background:rgba(255,71,87,0.08);border:none;border-radius:50%;color:#ff4757;font-size:14px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
-        .btn-rm:hover{background:#ff4757;color:#fff}
-
-        .payer-row{display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(0,177,79,0.06);border-radius:10px;border:1px solid rgba(0,177,79,0.12)}
-        .payer-label{font-size:11px;font-weight:600;color:#00d25e;white-space:nowrap}
-        .payer-select{flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:8px 10px;color:#fff;font-family:inherit;font-size:12px;outline:none}
-
-        .fee-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-        .fee-group{display:flex;flex-direction:column;gap:4px}
-        .fee-label{font-size:11px;font-weight:600;color:rgba(255,255,255,0.4)}
-        .fee-input{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px 12px;color:#fff;font-family:inherit;font-size:13px;outline:none;text-align:right}
-        .fee-input:focus{border-color:#00b14f}
-
-        .btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:13px;border:none;border-radius:12px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
-        .btn-add{background:rgba(255,255,255,0.02);color:rgba(255,255,255,0.35);border:1px dashed rgba(255,255,255,0.08);margin-top:4px}
-        .btn-add:hover{border-color:#00b14f;color:#00d25e}
-        .btn-calc{background:linear-gradient(135deg,#00b14f,#00d25e);color:#fff;font-size:14px;box-shadow:0 4px 18px rgba(0,177,79,0.3);margin-top:4px}
-        .btn-calc:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(0,177,79,0.4)}
-        .btn-calc:active{transform:scale(.98)}
-        .btn-copy{background:rgba(255,255,255,0.03);color:#fff;border:1px solid rgba(255,255,255,0.06);font-size:12px;margin-top:8px}
-        .btn-copy:hover{border-color:#00b14f}
-        .btn-copy.copied{background:rgba(0,177,79,0.1);color:#00d25e;border-color:#00b14f}
-
-        /* Results */
-        .results{display:none;animation:fadeIn .3s ease}
-        .results.show{display:block}
-        .summary-bar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
-        .summary-item{text-align:center;padding:10px 6px;background:rgba(255,255,255,0.03);border-radius:10px}
-        .summary-label{font-size:9px;font-weight:600;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.5px}
-        .summary-value{font-size:16px;font-weight:800;margin-top:3px}
-        .sv-blue{color:#3b82f6} .sv-orange{color:#ffa502} .sv-green{color:#00d25e}
-
-        .rp{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:rgba(255,255,255,0.03);border-radius:12px;margin-bottom:6px;border-left:3px solid #00b14f}
-        .rp.is-payer{border-left-color:#ffa502;background:rgba(255,165,2,0.03)}
-        .rp-left{display:flex;flex-direction:column;gap:2px}
-        .rp-name{font-size:13px;font-weight:700}
-        .rp-detail{font-size:10px;color:rgba(255,255,255,0.35)}
-        .rp-badge{font-size:8px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(255,165,2,0.12);color:#ffa502;margin-left:6px}
-        .rp-right{text-align:right}
-        .rp-amount{font-size:16px;font-weight:800}
-        .rp-amount.owes{color:#ff4757} .rp-amount.receives{color:#00d25e}
-        .rp-sub{font-size:9px;color:rgba(255,255,255,0.35);margin-top:2px}
-
-        .bd-toggle{display:flex;align-items:center;justify-content:center;font-size:11px;color:rgba(255,255,255,0.35);background:transparent;border:none;cursor:pointer;padding:8px;width:100%;margin-top:4px}
-        .bd-toggle:hover{color:#fff}
-        .bd-content{display:none;padding:12px;background:rgba(255,255,255,0.03);border-radius:10px;margin-top:6px;font-size:11px;line-height:1.8;color:rgba(255,255,255,0.4)}
-        .bd-content.show{display:block}
-        .bd-content strong{color:#fff}
-
-        /* Sound button */
-        .sound-btn{
-            position:absolute;bottom:18px;right:18px;z-index:20;
-            background:rgba(0,0,0,0.3);backdrop-filter:blur(10px);
-            border:1px solid rgba(255,255,255,0.08);border-radius:30px;
-            color:rgba(255,255,255,0.5);font-family:'Inter',sans-serif;
-            font-size:11px;padding:8px 16px;cursor:pointer;transition:all .3s;
-        }
-        .sound-btn:hover{background:rgba(0,0,0,0.45);color:#fff}
-        .sound-btn.active{color:#fff;border-color:rgba(255,255,255,0.2)}
-
-        /* Scene title */
-        .scene-title{
-            position:absolute;top:18px;left:18px;z-index:10;pointer-events:none;
-            opacity:0;animation:fadeTitle 2s ease 1s forwards;
-        }
-        @keyframes fadeTitle{to{opacity:1}}
-        .scene-jp{font-family:'Kaisei Decol',serif;font-size:28px;font-weight:700;color:rgba(255,255,255,0.8);text-shadow:0 2px 15px rgba(0,0,0,0.3);letter-spacing:6px}
-        .scene-sub{font-size:10px;font-weight:300;color:rgba(255,255,255,0.4);letter-spacing:3px;margin-top:3px;text-transform:uppercase}
-
-        @media(max-width:768px){
-            .calc-panel{width:100%;border-left:none;border-top:1px solid rgba(255,255,255,0.06)}
-            .scene-title{top:auto;bottom:60px;left:16px}
-            .scene-jp{font-size:20px}
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#173d35">
+<meta name="description" content="GrabSplit ช่วยหารบิล แบ่งส่วนลดและค่าส่งอย่างยุติธรรม">
+<title>GrabSplit — Kamakura Summer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Kaisei+Decol:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#18342f;--muted:#687973;--paper:#fffdf6;--paper2:#f7f2e5;--green:#087f5b;--green2:#075e47;--mint:#dff4e7;--coral:#f06d52;--line:rgba(24,52,47,.13);--shadow:0 24px 70px rgba(20,55,48,.18)}
+*{box-sizing:border-box;margin:0;padding:0}html{background:#173d35;scroll-behavior:smooth}
+body{min-width:320px;min-height:100vh;color:var(--ink);font-family:"IBM Plex Sans Thai",system-ui,sans-serif;background:linear-gradient(135deg,#e8f6ed,#fbf5e5 62%,#f8dfcf);-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.5}:focus-visible{outline:3px solid #f06d5275;outline-offset:3px}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.app-shell{min-height:100vh;display:grid;grid-template-columns:minmax(0,1.08fr) minmax(430px,.92fr)}
+.scene{min-height:100vh;position:sticky;top:0;overflow:hidden;isolation:isolate;background:#8dc9df;color:#fff}
+#sceneCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:-3}
+.scene:before{content:"";position:absolute;inset:0;z-index:-2;background:linear-gradient(180deg,#0a2d3a0f,transparent 42%,#082e255c);pointer-events:none}
+.scene:after{content:"";position:absolute;inset:0;z-index:-1;box-shadow:inset -90px 0 120px #0d302829;pointer-events:none}
+.scene-nav{display:flex;align-items:center;justify-content:space-between;padding:26px 30px}
+.brand{display:flex;align-items:center;gap:11px;font-weight:700}.brand-mark{width:42px;height:42px;display:grid;place-items:center;border-radius:14px;background:#fffdf6e6;color:var(--green);box-shadow:0 8px 24px #1140342e;transform:rotate(-3deg);font-size:22px}.brand-name{color:#fff;text-shadow:0 2px 16px #0004;font-size:19px}
+.sound-toggle{min-height:44px;border:1px solid #ffffff59;border-radius:999px;background:#0d342d3b;backdrop-filter:blur(12px);color:#fff;padding:9px 14px;display:flex;align-items:center;gap:7px;font-weight:600}.sound-toggle:hover{background:#0d342d66}
+.scene-copy{position:absolute;left:clamp(28px,6vw,76px);top:50%;width:min(560px,78%);transform:translateY(-52%);text-shadow:0 3px 24px #072b2533}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:#fffdf6e0;color:var(--green2);font-size:13px;font-weight:700;box-shadow:0 8px 25px #093a2f21;text-shadow:none}.eyebrow-dot{width:8px;height:8px;border-radius:50%;background:var(--coral);box-shadow:0 0 0 5px #f06d5224}
+.scene-copy h1{margin-top:20px;font-family:"Kaisei Decol",serif;font-size:clamp(47px,6vw,84px);line-height:1.02;letter-spacing:-.055em}.scene-copy h1 span{display:block;color:#fff3ba}.scene-copy p{margin-top:18px;max-width:490px;font-size:clamp(17px,1.7vw,21px);line-height:1.7;font-weight:500}
+.jp-sign{position:absolute;right:28px;top:22%;writing-mode:vertical-rl;font-family:"Kaisei Decol",serif;font-size:14px;letter-spacing:.34em;color:#fff9d6cc;text-shadow:0 2px 12px #173d3566;border-right:1px solid #fff9d67a;padding-right:9px}
+.scene-meta{position:absolute;left:30px;right:30px;bottom:27px;display:flex;align-items:flex-end;justify-content:space-between}
+.station-card{padding:12px 15px;border-radius:16px;background:#0e382f61;border:1px solid #ffffff47;backdrop-filter:blur(14px)}.station-card small{display:block;opacity:.74;font-size:11px;letter-spacing:.1em}.station-card strong{display:block;margin-top:2px;font-family:"Kaisei Decol",serif;font-size:18px}.summer-stamp{width:78px;height:78px;border:2px solid #fff7d5b3;border-radius:50%;display:grid;place-items:center;text-align:center;font-family:"Kaisei Decol",serif;color:#fff4bd;transform:rotate(7deg);font-size:12px}
+.workspace{min-height:100vh;padding:clamp(28px,5vw,62px) clamp(22px,4vw,58px);display:flex;justify-content:center}.workspace-inner{width:100%;max-width:610px}
+.workspace-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:26px}.workspace-head h2{font-size:clamp(28px,3vw,40px);line-height:1.16;letter-spacing:-.045em}.workspace-head p{margin-top:7px;color:var(--muted);line-height:1.55}
+.live-pill{flex:0 0 auto;display:flex;align-items:center;gap:7px;color:var(--green2);background:#ffffffb3;border:1px solid var(--line);padding:8px 11px;border-radius:999px;font-size:12px;font-weight:700}.live-pill i{width:7px;height:7px;background:#22a06b;border-radius:50%;box-shadow:0 0 0 4px #22a06b1f}
+.bill-card{background:#fffdf6e8;border:1px solid #fff;border-radius:32px;box-shadow:var(--shadow);overflow:hidden;backdrop-filter:blur(18px)}.bill-form{padding:clamp(20px,4vw,34px)}
+.form-section{border:0}.form-section+.form-section{margin-top:26px;padding-top:25px;border-top:1px dashed #18342f2b}
+.section-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:15px}.section-title{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700}.step{width:28px;height:28px;display:grid;place-items:center;border-radius:9px;background:var(--mint);color:var(--green2);font-size:13px;font-weight:700}
+.text-btn{min-height:40px;border:1px solid var(--line);background:#fff;color:var(--green2);border-radius:12px;padding:7px 11px;font-size:13px;font-weight:700}.text-btn:hover{border-color:#087f5b5c;background:#f5fbf7}
+.people-list{display:grid;gap:10px}.person-row{display:grid;grid-template-columns:38px minmax(0,1fr) 128px 40px;gap:9px;align-items:center}.avatar{width:38px;height:38px;display:grid;place-items:center;border-radius:13px;background:var(--paper2);color:var(--green2);font-weight:700;font-size:13px}
+.field{position:relative}.control{width:100%;height:46px;border:1px solid var(--line);border-radius:13px;background:#fff;color:var(--ink);padding:9px 12px;transition:.18s}.control:hover{border-color:#087f5b4d}.control:focus{outline:0;border-color:var(--green);box-shadow:0 0 0 4px #087f5b1c}.money-control{padding-right:32px;text-align:right;font-variant-numeric:tabular-nums}.currency{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.remove-person{width:40px;height:40px;border:0;border-radius:12px;background:transparent;color:#9a7770;font-size:22px;display:grid;place-items:center}.remove-person:hover{background:#fff0eb;color:#c94f38}
+.details-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.input-group label{display:block;margin-bottom:7px;color:var(--muted);font-size:13px;font-weight:600}.input-hint{display:block;margin-top:6px;color:#86938f;font-size:11px}.payer-wrap{margin-top:13px}
+select.control{appearance:none;background:#fff linear-gradient(45deg,transparent 50%,#667872 50%) no-repeat calc(100% - 16px) 20px/6px 6px;padding-right:34px}
+.form-error{display:none;margin-top:14px;padding:11px 13px;border-radius:12px;background:#fff0eb;color:#a83f2c;font-size:13px;font-weight:600}.form-error.show{display:block}
+.form-actions{display:grid;grid-template-columns:auto 1fr;gap:10px;margin-top:26px}.btn{min-height:50px;border:0;border-radius:15px;padding:11px 17px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;transition:.15s}.btn:active{transform:translateY(1px) scale(.99)}.btn-secondary{background:#eef1eb;color:var(--ink)}.btn-primary{color:#fff;background:linear-gradient(135deg,var(--green),#22a06b);box-shadow:0 10px 24px #087f5b3d}.btn-primary:hover{transform:translateY(-1px);box-shadow:0 14px 28px #087f5b4d}
+.results{display:none;border-top:1px solid var(--line);background:linear-gradient(#dff4e78c,#fffdf6f0);padding:clamp(20px,4vw,34px)}.results.show{display:block;animation:rise .36s ease}@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+.results-head{display:flex;justify-content:space-between;gap:15px;margin-bottom:17px}.results-head h3{font-size:22px}.results-head p{margin-top:3px;color:var(--muted);font-size:13px}.success-mark{width:42px;height:42px;display:grid;place-items:center;border-radius:14px;background:var(--green);color:#fff;font-size:20px;transform:rotate(3deg)}
+.summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:18px}.summary-item{background:#fff;border:1px solid var(--line);border-radius:15px;padding:12px;text-align:center}.summary-item span{display:block;color:var(--muted);font-size:11px}.summary-item strong{display:block;margin-top:3px;font-size:18px}.summary-item.discount strong{color:var(--coral)}.summary-item.total strong{color:var(--green)}
+.settlements{display:grid;gap:9px}.settlement{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px 14px}.settlement.payer{background:#fff9e8;border-color:#daa22645}.settlement-name{display:flex;align-items:center;gap:7px;font-weight:700}.payer-badge{padding:3px 7px;border-radius:999px;background:#ffedb7;color:#735914;font-size:10px}.settlement-detail{margin-top:3px;color:var(--muted);font-size:11px}.settlement-amount{text-align:right;font-size:18px;font-weight:700;color:var(--green)}.settlement-amount.owes{color:#c7543e}.settlement-action{display:block;color:var(--muted);font-size:10px;font-weight:500}
+details.breakdown{margin-top:13px;border-top:1px dashed var(--line);padding-top:12px}details.breakdown summary{cursor:pointer;color:var(--green2);font-size:13px;font-weight:700;list-style:none}.breakdown-body{margin-top:10px;color:var(--muted);font-size:12px;line-height:1.75}.breakdown-line{display:flex;justify-content:space-between;gap:14px}
+.share-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:16px}.btn-copy{background:#fff;color:var(--green2);border:1px solid #087f5b40}.btn-share{background:var(--ink);color:#fff}.privacy-note{text-align:center;margin-top:16px;color:#7d8b86;font-size:11px}
+.toast{position:fixed;z-index:50;left:50%;bottom:max(22px,env(safe-area-inset-bottom));transform:translate(-50%,18px);opacity:0;pointer-events:none;background:#163e35;color:#fff;border-radius:999px;padding:11px 16px;box-shadow:0 12px 35px #0927213d;font-size:13px;font-weight:700;transition:.24s}.toast.show{opacity:1;transform:translate(-50%,0)}
+dialog{width:min(420px,calc(100% - 32px));border:0;border-radius:22px;padding:24px;color:var(--ink);box-shadow:0 28px 90px #0a29224d;background:var(--paper)}dialog::backdrop{background:#08231e73;backdrop-filter:blur(4px)}dialog h3{font-size:21px}dialog p{margin-top:7px;color:var(--muted);line-height:1.6}.dialog-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:20px}.dialog-actions .btn{min-height:44px}
+@media(max-width:980px){.app-shell{display:block}.scene{position:relative;min-height:430px;height:54vh}.scene-copy{top:49%;width:min(620px,84%)}.scene-copy h1{font-size:clamp(45px,9vw,72px)}.workspace{min-height:auto}}
+@media(max-width:600px){.scene{height:390px;min-height:390px}.scene-nav{padding:16px}.brand-mark{width:38px;height:38px}.sound-toggle{padding:8px 11px;font-size:0}.sound-icon{font-size:18px}.scene-copy{left:20px;top:48%;width:86%}.scene-copy h1{margin-top:15px;font-size:43px}.scene-copy p{margin-top:12px;font-size:15px;line-height:1.55}.scene-meta{left:16px;right:16px;bottom:14px}.summer-stamp{width:61px;height:61px;font-size:10px}.station-card{padding:9px 12px}.station-card strong{font-size:15px}.workspace{padding:26px 14px 42px}.workspace-head{margin-bottom:18px}.workspace-head h2{font-size:28px}.live-pill{display:none}.bill-card{border-radius:24px}.bill-form,.results{padding:20px 16px}.person-row{grid-template-columns:32px minmax(0,1fr) 104px 34px;gap:6px}.avatar{width:32px;height:36px}.remove-person{width:34px}.control{height:44px;padding-left:10px;padding-right:10px}.money-control{padding-right:27px}.currency{right:9px}.details-grid{grid-template-columns:1fr}.summary-item{padding:10px 5px}.summary-item strong{font-size:15px}.settlement{padding:12px}.share-actions{grid-template-columns:1fr}}
+@media(max-width:370px){.person-row{grid-template-columns:28px minmax(0,1fr) 91px 30px;gap:5px}.avatar{width:28px}.remove-person{width:30px}.control{font-size:13px}}
+@media(max-width:600px){.jp-sign{display:none}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+</style>
 </head>
 <body>
-    <div class="vig"></div>
-    <canvas id="c"></canvas>
-
-    <div class="scene-title">
-        <div class="scene-jp">鎌倉の夏</div>
-        <div class="scene-sub">Kamakura Summer Edition</div>
-    </div>
-
-    <button class="toggle-calc" id="toggleCalc">🧮 GrabSplit</button>
-    <button class="sound-btn" id="soundBtn">🔇 Sound</button>
-
-    <!-- GrabSplit Calculator Panel -->
-    <div class="calc-panel" id="calcPanel">
-        <div class="calc-header">
-            <div>
-                <div class="calc-logo"><span class="gr">Grab</span>Split</div>
-                <div class="calc-sub">หารบิลแบบยุติธรรม</div>
-            </div>
-            <button class="calc-close" id="calcClose">&times;</button>
-        </div>
-        <div class="calc-body">
-            <div class="gc">
-                <div class="gc-title">👥 รายชื่อ & ราคาอาหาร</div>
-                <div id="peopleList"></div>
-                <button class="btn btn-add" id="btnAdd">+ เพิ่มคน</button>
-            </div>
-            <div class="gc">
-                <div class="gc-title">💳 ใครจ่าย?</div>
-                <div class="payer-row">
-                    <span class="payer-label">คนจ่าย:</span>
-                    <select class="payer-select" id="payerSelect"></select>
-                </div>
-            </div>
-            <div class="gc">
-                <div class="gc-title">🏷️ ส่วนลด & ค่าส่ง</div>
-                <div class="fee-grid">
-                    <div class="fee-group"><span class="fee-label">ส่วนลด (฿)</span><input type="number" class="fee-input" id="inputDiscount" placeholder="0" min="0" value="0"></div>
-                    <div class="fee-group"><span class="fee-label">ค่าส่ง (฿)</span><input type="number" class="fee-input" id="inputDelivery" placeholder="0" min="0" value="0"></div>
-                </div>
-            </div>
-            <button class="btn btn-calc" id="btnCalc">🧮 คำนวณเลย!</button>
-            <div class="results" id="resultsDiv">
-                <div class="gc" style="margin-top:12px">
-                    <div class="gc-title">📊 สรุปผล</div>
-                    <div class="summary-bar" id="summaryBar"></div>
-                    <div id="resultsList"></div>
-                    <button class="bd-toggle" id="bdToggle">📋 ดูวิธีคิดละเอียด ▼</button>
-                    <div class="bd-content" id="bdContent"></div>
-                    <button class="btn btn-copy" id="btnCopy">📋 คัดลอกส่ง LINE</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
+<div class="app-shell">
+<section class="scene" id="scene" aria-label="ภาพบรรยากาศฤดูร้อนที่คามาคุระ">
+<canvas id="sceneCanvas" aria-hidden="true"></canvas>
+<nav class="scene-nav" aria-label="แบรนด์และเสียงบรรยากาศ">
+<div class="brand"><span class="brand-mark" aria-hidden="true">割</span><span class="brand-name">GrabSplit</span></div>
+<button type="button" class="sound-toggle" id="soundToggle" aria-pressed="false" aria-label="เปิดเสียงบรรยากาศ"><span class="sound-icon" aria-hidden="true">🔇</span><span>เสียงบรรยากาศ</span></button>
+</nav>
+<div class="scene-copy"><div class="eyebrow"><span class="eyebrow-dot"></span> KAMAKURA SUMMER</div><h1>อิ่มด้วยกัน <span>แฟร์กับทุกคน</span></h1><p>หารค่าอาหาร ส่วนลด และค่าส่งให้ลงตัว ก่อนรถไฟขบวนถัดไปจะมา</p></div><div class="jp-sign" aria-hidden="true">潮風と緑の鎌倉</div>
+<div class="scene-meta" aria-hidden="true"><div class="station-card"><small>NOW ARRIVING</small><strong>鎌倉 · Kamakura</strong></div><div class="summer-stamp">夏の日<br>2026</div></div>
+</section>
+<main class="workspace"><div class="workspace-inner">
+<header class="workspace-head"><div><h2>หารบิลให้จบ<br>ในไม่กี่ก้าว</h2><p>กรอกยอดของแต่ละคน ที่เหลือเราคิดให้เอง</p></div><span class="live-pill"><i></i> บันทึกอัตโนมัติ</span></header>
+<article class="bill-card">
+<form class="bill-form" id="billForm" novalidate>
+<fieldset class="form-section"><legend class="sr-only">รายชื่อและค่าอาหาร</legend>
+<div class="section-heading"><div class="section-title"><span class="step">1</span> ใครกินเท่าไหร่?</div><button type="button" class="text-btn" id="addPerson">＋ เพิ่มคน</button></div><div class="people-list" id="peopleList"></div>
+</fieldset>
+<fieldset class="form-section"><legend class="sr-only">รายละเอียดบิล</legend>
+<div class="section-heading"><div class="section-title"><span class="step">2</span> รายละเอียดบิล</div></div>
+<div class="details-grid">
+<div class="input-group"><label for="discountInput">ส่วนลดรวม</label><div class="field"><input class="control money-control" id="discountInput" type="number" inputmode="decimal" min="0" step="0.01" value="0"><span class="currency">฿</span></div><small class="input-hint">แบ่งตามสัดส่วนค่าอาหาร</small></div>
+<div class="input-group"><label for="deliveryInput">ค่าส่ง</label><div class="field"><input class="control money-control" id="deliveryInput" type="number" inputmode="decimal" min="0" step="0.01" value="0"><span class="currency">฿</span></div><small class="input-hint">หารเท่ากันทุกคน</small></div>
+</div>
+<div class="input-group payer-wrap"><label for="payerSelect">ใครเป็นคนจ่ายก่อน?</label><select class="control" id="payerSelect"></select></div>
+</fieldset>
+<div class="form-error" id="formError" role="alert" tabindex="-1"></div>
+<div class="form-actions"><button type="button" class="btn btn-secondary" id="resetButton">เริ่มใหม่</button><button type="submit" class="btn btn-primary">✨ คำนวณให้เลย</button></div>
+</form>
+<section class="results" id="results" aria-labelledby="resultsTitle" aria-live="polite">
+<div class="results-head"><div><h3 id="resultsTitle">ลงตัวแล้ว!</h3><p>ยอดรวมส่วนลดและค่าส่งเรียบร้อย</p></div><div class="success-mark" aria-hidden="true">✓</div></div>
+<div class="summary-grid" id="summaryGrid"></div><div class="settlements" id="settlements"></div>
+<details class="breakdown"><summary>ดูวิธีคิดแบบละเอียด ＋</summary><div class="breakdown-body" id="breakdown"></div></details>
+<div class="share-actions"><button type="button" class="btn btn-copy" id="copyButton">⧉ คัดลอกสรุป</button><button type="button" class="btn btn-share" id="shareButton">↗ แชร์ให้เพื่อน</button></div>
+</section>
+</article>
+<p class="privacy-note">ข้อมูลอยู่บนอุปกรณ์ของคุณ ไม่มีการส่งขึ้นเซิร์ฟเวอร์</p>
+</div></main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<dialog id="resetDialog" aria-labelledby="resetTitle"><h3 id="resetTitle">เริ่มบิลใหม่ไหม?</h3><p>รายชื่อและตัวเลขที่กรอกไว้จะถูกล้างทั้งหมด</p><div class="dialog-actions"><button type="button" class="btn btn-secondary" id="cancelReset">ยังก่อน</button><button type="button" class="btn btn-primary" id="confirmReset">เริ่มใหม่</button></div></dialog>
 <script>
-(function(){
-"use strict";
-
-// ==================== GRABSPLIT LOGIC ====================
-const MAX_P=10;
-let people=[{name:'',price:''},{name:'',price:''},{name:'',price:''}];
-const listEl=document.getElementById('peopleList'),payerEl=document.getElementById('payerSelect');
-
-function esc(s){return s.replace(/"/g,'&quot;').replace(/</g,'&lt;');}
-function fmt(n){return n.toFixed(2).replace(/\.00$/,'').replace(/(\.\d)0$/,'$1');}
-
-function renderPeople(){
-    listEl.innerHTML='';payerEl.innerHTML='';
-    people.forEach(function(p,i){
-        const row=document.createElement('div');row.className='input-row';
-        row.innerHTML='<div class="pnum">'+(i+1)+'</div><input type="text" class="iname" placeholder="ชื่อ" maxlength="20" value="'+esc(p.name)+'" data-i="'+i+'" data-f="name"><input type="number" class="iprice" placeholder="฿ ราคา" min="0" value="'+(p.price===''?'':p.price)+'" data-i="'+i+'" data-f="price">'+(people.length>2?'<button class="btn-rm" data-i="'+i+'">&times;</button>':'');
-        listEl.appendChild(row);
-        const opt=document.createElement('option');opt.value=i;opt.textContent=p.name||('คนที่ '+(i+1));payerEl.appendChild(opt);
-    });
-    listEl.querySelectorAll('input').forEach(function(inp){
-        inp.addEventListener('input',function(){
-            const idx=parseInt(this.dataset.i),f=this.dataset.f;
-            people[idx][f]=this.value;
-            if(f==='name'){const opts=payerEl.querySelectorAll('option');if(opts[idx])opts[idx].textContent=this.value||('คนที่ '+(idx+1));}
-        });
-    });
-    listEl.querySelectorAll('.btn-rm').forEach(function(b){b.addEventListener('click',function(){people.splice(parseInt(this.dataset.i),1);renderPeople();});});
-    document.getElementById('btnAdd').style.display=people.length>=MAX_P?'none':'';
-}
-document.getElementById('btnAdd').addEventListener('click',function(){
-    if(people.length>=MAX_P)return;people.push({name:'',price:''});renderPeople();
-    setTimeout(function(){const inp=listEl.querySelectorAll('.iname');if(inp.length)inp[inp.length-1].focus();},50);
-});
-
-document.getElementById('btnCalc').addEventListener('click',function(){
-    const parsed=people.map(function(p,i){return{name:p.name.trim()||('คนที่ '+(i+1)),food:parseFloat(p.price)||0};});
-    const discount=parseFloat(document.getElementById('inputDiscount').value)||0;
-    const delivery=parseFloat(document.getElementById('inputDelivery').value)||0;
-    const payerIdx=parseInt(payerEl.value),numP=parsed.length;
-    const totalFood=parsed.reduce(function(s,p){return s+p.food;},0);
-    if(totalFood<=0){alert('กรอกราคาอาหารอย่างน้อย 1 คน');return;}
-    const effDiscount=Math.min(discount,totalFood),deliveryEach=delivery/numP;
-    const totalPaid=totalFood-effDiscount+delivery;
-    const results=parsed.map(function(p,i){
-        const ratio=p.food/totalFood,discAmt=effDiscount*ratio,foodAfter=p.food-discAmt;
-        return{name:p.name,food:p.food,ratio:ratio,discAmt:discAmt,foodAfter:foodAfter,delShare:deliveryEach,total:foodAfter+deliveryEach,isPayer:i===payerIdx};
-    });
-    const rd=document.getElementById('resultsDiv');rd.classList.add('show');
-    document.getElementById('summaryBar').innerHTML='<div class="summary-item"><div class="summary-label">ราคารวม</div><div class="summary-value sv-blue">฿'+fmt(totalFood)+'</div></div><div class="summary-item"><div class="summary-label">ส่วนลด</div><div class="summary-value sv-orange">-฿'+fmt(effDiscount)+'</div></div><div class="summary-item"><div class="summary-label">จ่ายจริง</div><div class="summary-value sv-green">฿'+fmt(totalPaid)+'</div></div>';
-    let html='';const payerName=results[payerIdx].name;
-    results.forEach(function(r){
-        const isPayer=r.isPayer;let ac,at,st;
-        if(isPayer){ac='receives';at='฿'+fmt(totalPaid-r.total);st='ได้รับคืน';}
-        else{ac='owes';at='฿'+fmt(r.total);st='โอนให้ '+payerName;}
-        html+='<div class="rp '+(isPayer?'is-payer':'')+'"><div class="rp-left"><div class="rp-name">'+r.name+(isPayer?' <span class="rp-badge">คนจ่าย</span>':'')+'</div><div class="rp-detail">อาหาร ฿'+fmt(r.food)+' → ลด ฿'+fmt(r.discAmt)+' + ส่ง ฿'+fmt(r.delShare)+'</div></div><div class="rp-right"><div class="rp-amount '+ac+'">'+at+'</div><div class="rp-sub">'+st+'</div></div></div>';
-    });
-    document.getElementById('resultsList').innerHTML=html;
-    let bd='<strong>วิธีคิด:</strong><br>• อาหารรวม: ฿'+fmt(totalFood)+'<br>• ส่วนลด: -฿'+fmt(effDiscount)+'<br>• ค่าส่ง: +฿'+fmt(delivery)+' (หาร '+numP+' = ฿'+fmt(deliveryEach)+'/คน)<br>• จ่ายจริง: ฿'+fmt(totalPaid)+'<br><br><strong>แต่ละคน:</strong><br>';
-    results.forEach(function(r){bd+='• <strong>'+r.name+'</strong>: ฿'+fmt(r.food)+' ('+(r.ratio*100).toFixed(1)+'%) → ลด ฿'+fmt(r.discAmt)+' + ส่ง ฿'+fmt(r.delShare)+' = <strong>฿'+fmt(r.total)+'</strong><br>';});
-    document.getElementById('bdContent').innerHTML=bd;
-    rd.dataset.copy=buildCopy(results,payerIdx,totalFood,effDiscount,delivery,totalPaid);
-    setTimeout(function(){rd.scrollIntoView({behavior:'smooth',block:'start'});},100);
-});
-
-function buildCopy(res,pi,tf,d,del,tp){
-    const pn=res[pi].name;let t='🧾 GrabSplit — สรุปหารบิล\n━━━━━━━━━━━━━━━\n💰 รวม: ฿'+fmt(tf)+' | ลด: -฿'+fmt(d)+' | ส่ง: +฿'+fmt(del)+'\n✅ จ่ายจริง: ฿'+fmt(tp)+' (โดย '+pn+')\n━━━━━━━━━━━━━━━\n';
-    res.forEach(function(r){t+=r.isPayer?'👑 '+r.name+' (คนจ่าย) — ได้คืน ฿'+fmt(tp-r.total)+'\n':'• '+r.name+' → โอน ฿'+fmt(r.total)+' ให้ '+pn+'\n';});
-    t+='━━━━━━━━━━━━━━━\nby GrabSplit 🍽️';return t;
-}
-document.getElementById('btnCopy').addEventListener('click',function(){
-    const txt=document.getElementById('resultsDiv').dataset.copy||'',btn=this;
-    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){btn.textContent='✅ คัดลอกแล้ว!';btn.classList.add('copied');setTimeout(function(){btn.textContent='📋 คัดลอกส่ง LINE';btn.classList.remove('copied');},2000);});}
-    else{const ta=document.createElement('textarea');ta.value=txt;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);btn.textContent='✅ คัดลอกแล้ว!';btn.classList.add('copied');setTimeout(function(){btn.textContent='📋 คัดลอกส่ง LINE';btn.classList.remove('copied');},2000);}
-});
-document.getElementById('bdToggle').addEventListener('click',function(){const el=document.getElementById('bdContent'),s=!el.classList.contains('show');el.classList.toggle('show');this.innerHTML=s?'📋 ซ่อน ▲':'📋 ดูวิธีคิดละเอียด ▼';});
-
-// Panel toggle
-const panel=document.getElementById('calcPanel');
-document.getElementById('toggleCalc').addEventListener('click',function(){panel.classList.toggle('open');this.classList.toggle('active');});
-document.getElementById('calcClose').addEventListener('click',function(){panel.classList.remove('open');document.getElementById('toggleCalc').classList.remove('active');});
-
-renderPeople();
-
-// ==================== KAMAKURA SCENE ====================
-const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
-let W,H;function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}resize();
-window.addEventListener('resize',resize);
-let t=0;const wp=Math.random()*1000;
-
-// Audio
-let audioCtx=null,soundOn=false;
-function initAudio(){
-    if(audioCtx)return;audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-    const bl=audioCtx.sampleRate*2,nb=audioCtx.createBuffer(1,bl,audioCtx.sampleRate),nd=nb.getChannelData(0);
-    for(let i=0;i<bl;i++)nd[i]=Math.random()*2-1;
-    // Cicada 1
-    const c1s=audioCtx.createBufferSource();c1s.buffer=nb;c1s.loop=true;
-    const c1f=audioCtx.createBiquadFilter();c1f.type='bandpass';c1f.frequency.value=4200;c1f.Q.value=8;
-    const c1l=audioCtx.createOscillator();c1l.frequency.value=0.15;const c1lg=audioCtx.createGain();c1lg.gain.value=0.06;c1l.connect(c1lg);
-    const c1v=audioCtx.createGain();c1v.gain.value=0.07;c1lg.connect(c1v.gain);c1s.connect(c1f);c1f.connect(c1v);c1l.start();
-    // Cicada 2
-    const c2s=audioCtx.createBufferSource();c2s.buffer=nb;c2s.loop=true;
-    const c2f=audioCtx.createBiquadFilter();c2f.type='bandpass';c2f.frequency.value=5800;c2f.Q.value=12;
-    const c2l=audioCtx.createOscillator();c2l.frequency.value=6;const c2lg=audioCtx.createGain();c2lg.gain.value=0.04;c2l.connect(c2lg);
-    const c2v=audioCtx.createGain();c2v.gain.value=0.05;c2lg.connect(c2v.gain);c2s.connect(c2f);c2f.connect(c2v);c2l.start();
-    const cg=audioCtx.createGain();cg.gain.value=0.8;c1v.connect(cg);c2v.connect(cg);cg.connect(audioCtx.destination);c1s.start();c2s.start();
-    // Wind
-    const ws=audioCtx.createBufferSource();ws.buffer=nb;ws.loop=true;
-    const wf=audioCtx.createBiquadFilter();wf.type='lowpass';wf.frequency.value=300;
-    const wg=audioCtx.createGain();wg.gain.value=0.03;ws.connect(wf);wf.connect(wg);wg.connect(audioCtx.destination);ws.start();
-}
-function playHorn(){
-    if(!audioCtx||!soundOn)return;const now=audioCtx.currentTime;
-    [320,400].forEach(function(fr){const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sawtooth';o.frequency.value=fr;
-    const f=audioCtx.createBiquadFilter();f.type='lowpass';f.frequency.value=600;
-    g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(0.05,now+0.1);g.gain.setValueAtTime(0.05,now+0.8);g.gain.linearRampToValueAtTime(0,now+1.2);
-    o.connect(f);f.connect(g);g.connect(audioCtx.destination);o.start(now);o.stop(now+1.3);});
-}
-function playClack(){
-    if(!audioCtx||!soundOn)return;const now=audioCtx.currentTime;
-    const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='square';o.frequency.value=80;
-    g.gain.setValueAtTime(0.025,now);g.gain.exponentialRampToValueAtTime(0.0001,now+0.03);
-    o.connect(g);g.connect(audioCtx.destination);o.start(now);o.stop(now+0.04);
-}
-document.getElementById('soundBtn').addEventListener('click',function(){
-    soundOn=!soundOn;this.textContent=soundOn?'🔊 Sound':'🔇 Sound';this.classList.toggle('active',soundOn);
-    if(soundOn){initAudio();if(audioCtx.state==='suspended')audioCtx.resume();}else if(audioCtx)audioCtx.suspend();
-});
-
-// Scene drawing
-function drawSky(){const g=ctx.createLinearGradient(0,0,0,H*0.65);g.addColorStop(0,'#5ba3d9');g.addColorStop(0.4,'#7dbde8');g.addColorStop(0.7,'#c4dff0');g.addColorStop(1,'#f0e6d3');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
-function drawSun(){const sx=W*0.75,sy=H*0.15,sr=Math.min(W,H)*0.06;const g=ctx.createRadialGradient(sx,sy,sr*0.2,sx,sy,sr*4);g.addColorStop(0,'rgba(255,240,200,0.35)');g.addColorStop(1,'rgba(255,240,200,0)');ctx.fillStyle=g;ctx.fillRect(sx-sr*5,sy-sr*5,sr*10,sr*10);ctx.fillStyle='#fff5d4';ctx.beginPath();ctx.arc(sx,sy,sr,0,Math.PI*2);ctx.fill();}
-
-const clouds=[];for(let i=0;i<5;i++)clouds.push({x:Math.random()*W,y:H*0.08+Math.random()*H*0.2,w:80+Math.random()*120,sp:0.15+Math.random()*0.2,op:0.3+Math.random()*0.3});
-function drawClouds(){clouds.forEach(function(c){c.x+=c.sp*(0.5+Math.sin(wp+t*0.0003)*0.5);if(c.x>W+c.w)c.x=-c.w*2;ctx.fillStyle='rgba(255,255,255,'+c.op+')';ctx.beginPath();ctx.arc(c.x,c.y,c.w*0.2,0,Math.PI*2);ctx.arc(c.x+c.w*0.2,c.y-c.w*0.08,c.w*0.25,0,Math.PI*2);ctx.arc(c.x+c.w*0.45,c.y,c.w*0.22,0,Math.PI*2);ctx.arc(c.x+c.w*0.65,c.y+c.w*0.02,c.w*0.18,0,Math.PI*2);ctx.fill();});}
-
-function drawMountains(){
-    [[0.38,'#8ba4b8'],[0.42,'#6d8fa5'],[0.47,'#4a7566']].forEach(function(l){
-        ctx.fillStyle=l[1];ctx.beginPath();ctx.moveTo(0,H*l[0]);
-        for(let x=0;x<=W;x+=W/8){const py=H*l[0]-Math.sin(x*0.003+l[0]*50)*H*0.12-Math.cos(x*0.007)*H*0.04;ctx.lineTo(x,py);}
-        ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();ctx.fill();
-    });
-}
-
-function drawRiceFields(){
-    const ft=H*0.48;const fg=ctx.createLinearGradient(0,ft,0,H);fg.addColorStop(0,'#5a8c3a');fg.addColorStop(0.3,'#4d7a30');fg.addColorStop(0.7,'#3d6525');fg.addColorStop(1,'#2d4c1a');ctx.fillStyle=fg;ctx.fillRect(0,ft,W,H-ft);
-    const wo=Math.sin(t*0.002+wp)*3;
-    for(let row=0;row<35;row++){const ry=ft+row*((H-ft)/35);const p=(ry-ft)/(H-ft);const rh=2+p*6;const sp=8+p*15;
-    for(let col=-2;col<W/sp+2;col++){const rx=col*sp+(row%2)*sp*0.5;const sw=Math.sin(t*0.003+col*0.5+row*0.3)*wo*p;
-    ctx.strokeStyle=p>0.3?'rgba(80,140,40,0.3)':'rgba(100,170,60,0.2)';ctx.lineWidth=0.5+p*1.5;ctx.beginPath();ctx.moveTo(rx,ry);ctx.quadraticCurveTo(rx+sw,ry-rh*0.6,rx+sw*1.2,ry-rh);ctx.stroke();}}
-    for(let i=0;i<6;i++){ctx.fillStyle='rgba(120,180,220,0.06)';ctx.fillRect(0,ft+(H-ft)*(i/6)+5,W,2);}
-}
-
-function drawTrack(){const ty=H*0.58;ctx.strokeStyle='#777';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,ty);ctx.lineTo(W,ty);ctx.stroke();ctx.beginPath();ctx.moveTo(0,ty+14);ctx.lineTo(W,ty+14);ctx.stroke();ctx.fillStyle='#5a4a3a';for(let x=0;x<W;x+=25)ctx.fillRect(x,ty-3,12,20);ctx.fillStyle='#8a8070';ctx.fillRect(0,ty-5,W,2);ctx.fillRect(0,ty+16,W,2);}
-function drawPath(){const py=H*0.72;ctx.fillStyle='#a08b6c';ctx.beginPath();ctx.moveTo(0,py);ctx.lineTo(W,py-5);ctx.lineTo(W,py+18);ctx.lineTo(0,py+22);ctx.closePath();ctx.fill();ctx.fillStyle='#8e7a5e';ctx.fillRect(0,py+1,W,2);}
-
-// Train
-let trainX=-600,trainSpd=2.5,trainDir=1,trainTmr=0,trainOn=false,hornDone=false,clkTmr=0;
-function updateTrain(){trainTmr++;if(!trainOn&&trainTmr>600){trainOn=true;trainX=trainDir>0?-600:W+100;trainSpd=2+Math.random()*1.5;trainTmr=0;hornDone=false;}
-if(trainOn){trainX+=trainSpd*trainDir;clkTmr++;if(clkTmr%12===0)playClack();if(!hornDone&&trainX>-100&&trainX<W*0.3){playHorn();hornDone=true;}if((trainDir>0&&trainX>W+200)||(trainDir<0&&trainX<-700)){trainOn=false;trainDir*=-1;}}}
-function drawTrain(){if(!trainOn)return;const ty=H*0.53,tw=450,th=55;ctx.save();
-ctx.fillStyle='rgba(0,0,0,0.15)';ctx.fillRect(trainX-5,ty+th-5,tw+10,12);
-const bg=ctx.createLinearGradient(0,ty,0,ty+th);bg.addColorStop(0,'#2d6b3f');bg.addColorStop(0.4,'#357a48');bg.addColorStop(1,'#1f4f2d');ctx.fillStyle=bg;
-ctx.beginPath();if(trainDir>0){ctx.moveTo(trainX+20,ty);ctx.lineTo(trainX+tw,ty);ctx.lineTo(trainX+tw+25,ty+th*0.3);ctx.lineTo(trainX+tw+25,ty+th);ctx.lineTo(trainX,ty+th);ctx.lineTo(trainX,ty+5);ctx.quadraticCurveTo(trainX,ty,trainX+20,ty);}else{ctx.moveTo(trainX+tw-20,ty);ctx.lineTo(trainX,ty);ctx.lineTo(trainX-25,ty+th*0.3);ctx.lineTo(trainX-25,ty+th);ctx.lineTo(trainX+tw,ty+th);ctx.lineTo(trainX+tw,ty+5);ctx.quadraticCurveTo(trainX+tw,ty,trainX+tw-20,ty);}ctx.closePath();ctx.fill();
-ctx.fillStyle='#f0e8d0';ctx.fillRect(trainX,ty+th*0.35,tw,th*0.12);
-ctx.fillStyle='#a8d8ea';for(let i=0;i<8;i++){const wx=trainX+30+i*((tw-60)/8);ctx.fillRect(wx,ty+8,32,20);ctx.fillStyle='rgba(255,255,255,0.3)';ctx.fillRect(wx,ty+8,32,6);ctx.fillStyle='#a8d8ea';}
-ctx.fillStyle='#333';for(let i=0;i<6;i++){const wx=trainX+40+i*((tw-40)/5);ctx.beginPath();ctx.arc(wx,ty+th+2,7,0,Math.PI*2);ctx.fill();ctx.fillStyle='#555';ctx.beginPath();ctx.arc(wx,ty+th+2,3,0,Math.PI*2);ctx.fill();ctx.fillStyle='#333';}
-const hlx=trainDir>0?trainX+tw+20:trainX-20;ctx.fillStyle='#ffe066';ctx.shadowColor='#ffe066';ctx.shadowBlur=12;ctx.beginPath();ctx.arc(hlx,ty+th*0.4,5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.restore();}
-
-// Mailbox
-function drawMailbox(){const mx=W*0.15,my=H*0.64,mw=28,mh=60;ctx.save();ctx.fillStyle='rgba(0,0,0,0.2)';ctx.beginPath();ctx.ellipse(mx,my+mh,mw*0.8,6,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#c0392b';ctx.fillRect(mx-5,my+mh*0.5,10,mh*0.5);ctx.fillStyle='#e74c3c';ctx.beginPath();ctx.moveTo(mx-mw/2,my+mh*0.5);ctx.lineTo(mx+mw/2,my+mh*0.5);ctx.lineTo(mx+mw/2,my+8);ctx.quadraticCurveTo(mx+mw/2,my,mx+mw/2-8,my);ctx.lineTo(mx-mw/2+8,my);ctx.quadraticCurveTo(mx-mw/2,my,mx-mw/2,my+8);ctx.closePath();ctx.fill();ctx.fillStyle='#c0392b';ctx.beginPath();ctx.ellipse(mx,my+2,mw/2+3,8,0,Math.PI,Math.PI*2);ctx.fill();ctx.fillStyle='#8b1a1a';ctx.fillRect(mx-mw*0.3,my+mh*0.22,mw*0.6,4);ctx.fillStyle='#fff';ctx.font='bold 11px sans-serif';ctx.textAlign='center';ctx.fillText('〒',mx,my+mh*0.42);ctx.fillStyle='rgba(255,255,255,0.15)';ctx.fillRect(mx-mw/2+3,my+6,5,mh*0.35);ctx.restore();}
-
-// Poles
-function drawPoles(){[W*0.35,W*0.65,W*0.92].forEach(function(px){ctx.strokeStyle='#4a4040';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(px,H*0.25);ctx.lineTo(px,H*0.72);ctx.stroke();ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(px-25,H*0.28);ctx.lineTo(px+25,H*0.28);ctx.stroke();ctx.strokeStyle='rgba(80,70,70,0.3)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px-25,H*0.28);ctx.quadraticCurveTo(px+80,H*0.3,px+150,H*0.28);ctx.stroke();});}
-
-// Foreground
-function drawFG(){const gy=H*0.88;for(let x=0;x<W;x+=6){const h=10+Math.random()*25,sw=Math.sin(t*0.003+x*0.1)*3;ctx.strokeStyle=x%18<9?'#3a6520':'#4a7830';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x,gy);ctx.quadraticCurveTo(x+sw,gy-h*0.6,x+sw*1.3,gy-h);ctx.stroke();}
-[{x:W*0.08,y:H*0.86,c:'#ffb7c5'},{x:W*0.45,y:H*0.87,c:'#c5b0ff'},{x:W*0.72,y:H*0.85,c:'#ffb7c5'},{x:W*0.88,y:H*0.86,c:'#fff3b0'}].forEach(function(fl){const sw=Math.sin(t*0.002+fl.x*0.05)*2;ctx.strokeStyle='#3a6520';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(fl.x,fl.y+10);ctx.quadraticCurveTo(fl.x+sw,fl.y+3,fl.x+sw,fl.y);ctx.stroke();ctx.fillStyle=fl.c;for(let p=0;p<5;p++){const a=(p/5)*Math.PI*2+t*0.001;ctx.beginPath();ctx.arc(fl.x+sw+Math.cos(a)*3,fl.y+Math.sin(a)*3,2.5,0,Math.PI*2);ctx.fill();}ctx.fillStyle='#ffe066';ctx.beginPath();ctx.arc(fl.x+sw,fl.y,1.5,0,Math.PI*2);ctx.fill();});}
-
-// Dragonflies
-const dfs=[];for(let i=0;i<3;i++)dfs.push({x:Math.random()*W,y:H*0.3+Math.random()*H*0.3,vx:(Math.random()-0.5)*1.5,vy:(Math.random()-0.5)*0.8,wp:Math.random()*100});
-function drawDF(){dfs.forEach(function(d){d.x+=d.vx+Math.sin(t*0.005+d.wp)*0.5;d.y+=d.vy+Math.cos(t*0.004+d.wp)*0.3;if(d.x>W+20)d.x=-20;if(d.x<-20)d.x=W+20;if(d.y>H*0.7)d.vy=-Math.abs(d.vy);if(d.y<H*0.15)d.vy=Math.abs(d.vy);const wf=Math.sin(t*0.15+d.wp)*8;ctx.fillStyle='rgba(60,60,80,0.7)';ctx.beginPath();ctx.ellipse(d.x,d.y,8,2,Math.atan2(d.vy,d.vx),0,Math.PI*2);ctx.fill();ctx.fillStyle='rgba(180,210,240,0.35)';ctx.beginPath();ctx.ellipse(d.x-2,d.y-wf*0.5,10,3,-0.3,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(d.x-2,d.y+wf*0.5,10,3,0.3,0,Math.PI*2);ctx.fill();});}
-
-function animate(){
-    t++;ctx.clearRect(0,0,W,H);
-    drawSky();drawSun();drawClouds();drawMountains();
-    ctx.fillStyle='rgba(255,248,230,0.02)';for(let x=0;x<W;x+=30){ctx.fillRect(x+Math.sin(t*0.005+x*0.02)*8,H*0.45,20,H*0.15);}
-    drawRiceFields();drawTrack();drawPath();drawPoles();updateTrain();drawTrain();drawMailbox();drawFG();drawDF();
-    ctx.fillStyle='rgba(255,220,150,0.04)';ctx.fillRect(0,0,W,H);
-    requestAnimationFrame(animate);
-}
-animate();
-
+(function(){"use strict";
+var MAX=10,MIN=2,KEY="grabsplit-kamakura-v2",idCount=0,calculated=false,lastResult=null,saveTimer=0,toastTimer=0;
+var list=document.getElementById("peopleList"),payer=document.getElementById("payerSelect"),discount=document.getElementById("discountInput"),delivery=document.getElementById("deliveryInput"),errorBox=document.getElementById("formError"),results=document.getElementById("results");
+function uid(){if(window.crypto&&crypto.randomUUID)return crypto.randomUUID();idCount++;return"p-"+Date.now()+"-"+idCount}
+function person(name,price){return{id:uid(),name:name||"",price:price||""}}
+function fresh(){var p=[person(),person(),person()];return{people:p,discount:"0",delivery:"0",payerId:p[0].id,hasCalculated:false}}
+var state=fresh();
+function restore(){try{var x=JSON.parse(localStorage.getItem(KEY));if(!x||!Array.isArray(x.people)||x.people.length<MIN||x.people.length>MAX)return;var p=x.people.map(function(v){return{id:typeof v.id==="string"&&v.id?v.id:uid(),name:String(v.name||"").slice(0,28),price:String(v.price||"").slice(0,16)}});state={people:p,discount:String(x.discount||"0"),delivery:String(x.delivery||"0"),payerId:p.some(function(v){return v.id===x.payerId})?x.payerId:p[0].id,hasCalculated:Boolean(x.hasCalculated)};calculated=state.hasCalculated}catch(e){}}
+restore();
+function save(){clearTimeout(saveTimer);saveTimer=setTimeout(function(){try{localStorage.setItem(KEY,JSON.stringify({people:state.people,discount:state.discount,delivery:state.delivery,payerId:state.payerId,hasCalculated:calculated}))}catch(e){}},180)}
+function nameOf(p,i){return p.name.trim()||"คนที่ "+(i+1)}
+function label(text,id){var x=document.createElement("label");x.className="sr-only";x.htmlFor=id;x.textContent=text;return x}
+function renderPeople(focusId){list.replaceChildren();state.people.forEach(function(p,i){
+var row=document.createElement("div");row.className="person-row";row.dataset.id=p.id;
+var avatar=document.createElement("div");avatar.className="avatar";avatar.textContent=i+1;avatar.setAttribute("aria-hidden","true");
+var nf=document.createElement("div");nf.className="field";var ni="name-"+p.id;nf.appendChild(label("ชื่อคนที่ "+(i+1),ni));var n=document.createElement("input");n.className="control";n.id=ni;n.type="text";n.maxLength=28;n.placeholder="ชื่อ";n.autocomplete="off";n.value=p.name;n.dataset.field="name";n.dataset.id=p.id;nf.appendChild(n);
+var pf=document.createElement("div");pf.className="field";var pi="price-"+p.id;pf.appendChild(label("ค่าอาหารของ "+nameOf(p,i),pi));var price=document.createElement("input");price.className="control money-control";price.id=pi;price.type="number";price.inputMode="decimal";price.min="0";price.step=".01";price.placeholder="0";price.value=p.price;price.dataset.field="price";price.dataset.id=p.id;var baht=document.createElement("span");baht.className="currency";baht.textContent="฿";baht.setAttribute("aria-hidden","true");pf.append(price,baht);
+var rm=document.createElement("button");rm.type="button";rm.className="remove-person";rm.dataset.remove=p.id;rm.setAttribute("aria-label","ลบ "+nameOf(p,i));rm.textContent="×";rm.disabled=state.people.length<=MIN;
+row.append(avatar,nf,pf,rm);list.appendChild(row)});
+renderPayers();document.getElementById("addPerson").disabled=state.people.length>=MAX;if(focusId){var t=document.getElementById("name-"+focusId);if(t)t.focus()}}
+function renderPayers(){var current=state.payerId;payer.replaceChildren();state.people.forEach(function(p,i){var o=document.createElement("option");o.value=p.id;o.textContent=nameOf(p,i);payer.appendChild(o)});if(!state.people.some(function(p){return p.id===current}))current=state.people[0].id;state.payerId=current;payer.value=current}
+function find(id){return state.people.find(function(p){return p.id===id})}
+function cents(value){var s=String(value).trim();if(s==="")return{valid:true,value:0};var n=Number(s);return Number.isFinite(n)&&n>=0?{valid:true,value:Math.round((n+Number.EPSILON)*100)}:{valid:false,value:0}}
+function allocate(total,weights){var sum=weights.reduce(function(a,b){return a+b},0);if(total<=0||sum<=0)return weights.map(function(){return 0});var raw=weights.map(function(w){return total*w/sum}),out=raw.map(Math.floor),left=total-out.reduce(function(a,b){return a+b},0);raw.map(function(n,i){return{i:i,f:n-out[i]}}).sort(function(a,b){return b.f-a.f||a.i-b.i}).slice(0,left).forEach(function(x){out[x.i]++});return out}
+function equal(total,count){var base=Math.floor(total/count),left=total-base*count;return Array.from({length:count},function(_,i){return base+(i<left?1:0)})}
+function calculate(){var values=[],bad=false;state.people.forEach(function(p){var v=cents(p.price);if(!v.valid)bad=true;values.push(v.value)});var d=cents(state.discount),fee=cents(state.delivery);if(!d.valid||!fee.valid)bad=true;if(bad)return{error:"กรุณากรอกจำนวนเงินเป็นเลข 0 หรือมากกว่า"};var food=values.reduce(function(a,b){return a+b},0);if(food<=0)return{error:"กรอกค่าอาหารอย่างน้อย 1 คนก่อนคำนวณนะ"};var used=Math.min(d.value,food),ds=allocate(used,values),fs=equal(fee.value,state.people.length);var rows=state.people.map(function(p,i){return{id:p.id,name:nameOf(p,i),food:values[i],discount:ds[i],delivery:fs[i],total:values[i]-ds[i]+fs[i],payer:p.id===state.payerId}});var net=food-used+fee.value,pay=rows.find(function(r){return r.payer})||rows[0];return{rows:rows,foodTotal:food,discount:used,requestedDiscount:d.value,delivery:fee.value,netTotal:net,payer:pay}}
+function money(value){return new Intl.NumberFormat("th-TH",{style:"currency",currency:"THB",minimumFractionDigits:0,maximumFractionDigits:2}).format(value/100)}
+function summary(labelText,value,cls){var item=document.createElement("div");item.className="summary-item "+(cls||"");var a=document.createElement("span");a.textContent=labelText;var b=document.createElement("strong");b.textContent=value;item.append(a,b);return item}
+function line(labelText,value){var x=document.createElement("div");x.className="breakdown-line";var a=document.createElement("span");a.textContent=labelText;var b=document.createElement("strong");b.textContent=value;x.append(a,b);return x}
+function renderResult(r){lastResult=r;document.getElementById("summaryGrid").replaceChildren(summary("ค่าอาหาร",money(r.foodTotal)),summary("ส่วนลด","− "+money(r.discount),"discount"),summary("ยอดสุทธิ",money(r.netTotal),"total"));var box=document.getElementById("settlements");box.replaceChildren();r.rows.forEach(function(row){
+var card=document.createElement("div");card.className="settlement"+(row.payer?" payer":"");var left=document.createElement("div"),title=document.createElement("div");title.className="settlement-name";var text=document.createElement("span");text.textContent=row.name;title.appendChild(text);if(row.payer){var badge=document.createElement("span");badge.className="payer-badge";badge.textContent="คนจ่าย";title.appendChild(badge)}var detail=document.createElement("div");detail.className="settlement-detail";detail.textContent="อาหาร "+money(row.food)+" · ลด "+money(row.discount)+" · ส่ง "+money(row.delivery);left.append(title,detail);var amount=document.createElement("div");amount.className="settlement-amount";var action=document.createElement("span");action.className="settlement-action";if(row.payer){amount.textContent=money(r.netTotal-row.total);action.textContent="รับคืนจากเพื่อน"}else{amount.classList.add("owes");amount.textContent=money(row.total);action.textContent="โอนให้ "+r.payer.name}amount.appendChild(action);card.append(left,amount);box.appendChild(card)});
+var bd=document.getElementById("breakdown");bd.replaceChildren(line("ค่าอาหารรวม",money(r.foodTotal)),line("ส่วนลดที่ใช้","− "+money(r.discount)),line("ค่าส่ง","+ "+money(r.delivery)),line("ยอดจ่ายจริง",money(r.netTotal)));if(r.requestedDiscount>r.foodTotal){var note=document.createElement("p");note.style.marginTop="8px";note.textContent="ส่วนลดเกินค่าอาหาร ระบบจึงใช้สูงสุดเท่ากับค่าอาหารรวม";bd.appendChild(note)}results.classList.add("show")}
+function run(options){options=options||{};var r=calculate();if(r.error){errorBox.textContent=r.error;errorBox.classList.add("show");if(options.focus!==false)errorBox.focus();return false}errorBox.classList.remove("show");renderResult(r);calculated=true;save();if(options.scroll)japaneseCue("success");if(options.scroll)results.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});return true}
+function refresh(){if(calculated)run({focus:false})}
+list.addEventListener("input",function(e){var input=e.target.closest("input[data-id]");if(!input)return;var p=find(input.dataset.id);if(!p)return;p[input.dataset.field]=input.value;if(input.dataset.field==="name")renderPayers();save();refresh()});
+list.addEventListener("click",function(e){var b=e.target.closest("[data-remove]");if(!b||state.people.length<=MIN)return;var i=state.people.findIndex(function(p){return p.id===b.dataset.remove});if(i<0)return;var removed=state.people.splice(i,1)[0];if(removed.id===state.payerId)state.payerId=state.people[0].id;renderPeople();save();refresh()});
+document.getElementById("addPerson").addEventListener("click",function(){if(state.people.length>=MAX)return;var p=person();state.people.push(p);renderPeople(p.id);save();japaneseCue("tap");refresh()});
+[discount,delivery].forEach(function(input){input.addEventListener("input",function(){state[input===discount?"discount":"delivery"]=input.value;save();refresh()})});
+payer.addEventListener("change",function(){state.payerId=this.value;save();refresh()});
+document.getElementById("billForm").addEventListener("submit",function(e){e.preventDefault();run({scroll:true})});
+var dialog=document.getElementById("resetDialog");
+document.getElementById("resetButton").addEventListener("click",function(){if(dialog.showModal)dialog.showModal();else if(confirm("ล้างข้อมูลทั้งหมด?"))reset()});
+document.getElementById("cancelReset").addEventListener("click",function(){dialog.close()});
+document.getElementById("confirmReset").addEventListener("click",function(){dialog.close();reset()});
+dialog.addEventListener("click",function(e){if(e.target===dialog)dialog.close()});
+function reset(){state=fresh();calculated=false;lastResult=null;discount.value="0";delivery.value="0";errorBox.classList.remove("show");results.classList.remove("show");renderPeople();try{localStorage.removeItem(KEY)}catch(e){}japaneseCue("reset");toast("พร้อมสำหรับบิลใหม่แล้ว")}
+function textFor(r){var text="🧾 GrabSplit — สรุปหารบิล\n━━━━━━━━━━━━━━\n";text+="ค่าอาหาร "+money(r.foodTotal)+" · ลด "+money(r.discount)+" · ส่ง "+money(r.delivery)+"\nยอดสุทธิ "+money(r.netTotal)+" ("+r.payer.name+" จ่ายก่อน)\n━━━━━━━━━━━━━━\n";r.rows.forEach(function(row){text+=row.payer?"👑 "+row.name+" รับคืน "+money(r.netTotal-row.total)+"\n":"• "+row.name+" โอน "+money(row.total)+" ให้ "+r.payer.name+"\n"});return text+"━━━━━━━━━━━━━━\nหารอย่างแฟร์ด้วย GrabSplit 🌿"}
+function fallbackCopy(text){var a=document.createElement("textarea");a.value=text;a.style.cssText="position:fixed;opacity:0";document.body.appendChild(a);a.select();var ok=false;try{ok=document.execCommand("copy")}catch(e){}a.remove();return ok?Promise.resolve():Promise.reject()}
+function copy(){if(!lastResult)return;var text=textFor(lastResult),job=navigator.clipboard&&window.isSecureContext?navigator.clipboard.writeText(text):fallbackCopy(text);job.then(function(){japaneseCue("share");toast("คัดลอกสรุปแล้ว ✨")}).catch(function(){toast("คัดลอกไม่สำเร็จ ลองอีกครั้งนะ")})}
+document.getElementById("copyButton").addEventListener("click",copy);
+document.getElementById("shareButton").addEventListener("click",function(){if(!lastResult)return;var data={title:"GrabSplit — สรุปหารบิล",text:textFor(lastResult)};if(navigator.share)navigator.share(data).catch(function(e){if(e.name!=="AbortError")copy()});else copy()});
+function toast(message){var t=document.getElementById("toast");t.textContent=message;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove("show")},2200)}
+discount.value=state.discount;delivery.value=state.delivery;renderPeople();if(calculated)run({focus:false});
+/* Kamakura canvas: cached geometry, capped DPR, visibility-aware animation */
+var canvas=document.getElementById("sceneCanvas"),ctx=canvas.getContext("2d");if(!ctx)return;
+var scene=document.getElementById("scene"),W=1,H=1,dpr=1,raf=0,start=performance.now(),grass=[],clouds=[],flies=[],px=0,py=0,hidden=document.hidden,resizeTimer=0;
+var reduced=matchMedia("(prefers-reduced-motion: reduce)"),audio=null,ambience=null,sound=false,hornCycle=-1,nextChime=0;
+function seeded(i,o){var x=Math.sin(i*9283.31+o*77.7)*43758.5453;return x-Math.floor(x)}
+function rebuild(){var rect=scene.getBoundingClientRect();W=Math.max(1,rect.width);H=Math.max(1,rect.height);dpr=Math.min(devicePixelRatio||1,1.5);canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);canvas.style.width=W+"px";canvas.style.height=H+"px";ctx.setTransform(dpr,0,0,dpr,0,0);grass=Array.from({length:Math.ceil(W/7)},function(_,i){return{x:i*7,h:11+seeded(i,1)*25,t:seeded(i,2)}});clouds=Array.from({length:5},function(_,i){return{x:seeded(i,3)*W,y:H*(.08+seeded(i,4)*.2),w:85+seeded(i,5)*115,speed:3+seeded(i,6)*5,alpha:.28+seeded(i,7)*.24}});flies=Array.from({length:3},function(_,i){return{x:seeded(i,8)*W,y:H*(.28+seeded(i,9)*.25),phase:seeded(i,10)*9}});draw(reduced.matches?7:(performance.now()-start)/1000)}
+function cloud(c,time){var x=(c.x+time*c.speed)%(W+c.w*2)-c.w;ctx.fillStyle="rgba(255,255,255,"+c.alpha+")";ctx.beginPath();ctx.arc(x,c.y,c.w*.2,0,Math.PI*2);ctx.arc(x+c.w*.21,c.y-c.w*.08,c.w*.25,0,Math.PI*2);ctx.arc(x+c.w*.47,c.y,c.w*.22,0,Math.PI*2);ctx.arc(x+c.w*.68,c.y+c.w*.02,c.w*.17,0,Math.PI*2);ctx.fill()}
+function rounded(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath()}
+function train(time,trackY){var cycle=Math.floor(time/19),progress=time%19/19;if(progress<.12)return;var local=(progress-.12)/.88,direction=cycle%2===0?1:-1,tw=Math.min(430,W*.64),th=Math.max(45,H*.068),tx=direction===1?-tw+local*(W+tw):W-local*(W+tw),ty=trackY-th+2;ctx.save();ctx.fillStyle="#12271f38";ctx.fillRect(tx-5,ty+th-3,tw+10,9);ctx.fillStyle="#efe9cf";rounded(tx,ty,tw,th,10);ctx.fill();ctx.fillStyle="#176548";ctx.fillRect(tx,ty+th*.54,tw,th*.34);ctx.fillStyle="#f7f0d5";ctx.fillRect(tx,ty+th*.48,tw,5);ctx.fillStyle="#284a4c";var count=Math.max(5,Math.floor(tw/54));for(var i=0;i<count;i++){rounded(tx+20+i*(tw-40)/count,ty+8,29,17,3);ctx.fill()}var front=direction===1?tx+tw-30:tx+9;ctx.fillStyle="#203a36";rounded(front,ty+7,21,10,3);ctx.fill();ctx.fillStyle="#f5e8b0";ctx.font="bold 7px sans-serif";ctx.textAlign="center";ctx.fillText("鎌倉",front+10.5,ty+15);ctx.fillStyle="#ffe08a";ctx.shadowColor="#ffe08a";ctx.shadowBlur=8;ctx.beginPath();ctx.arc(direction===1?tx+tw-8:tx+8,ty+th*.7,3.2,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle="#253b34";for(i=0;i<5;i++){ctx.beginPath();ctx.arc(tx+35+i*(tw-70)/4,ty+th+1,6,0,Math.PI*2);ctx.fill()}ctx.restore();if(sound&&cycle!==hornCycle&&local>.28&&local<.31){hornCycle=cycle;horn()}}
+function mailbox(){var x=W*.13,y=H*.68;ctx.fillStyle="#8f3e31";ctx.fillRect(x-4,y+24,8,45);ctx.fillStyle="#e5634f";rounded(x-17,y,34,34,8);ctx.fill();ctx.fillStyle="#8f3026";ctx.fillRect(x-10,y+12,20,4);ctx.fillStyle="#fff7e7";ctx.font="bold 11px sans-serif";ctx.textAlign="center";ctx.fillText("〒",x,y+29)}
+function japaneseDetails(time){ctx.save();var base=H*.545;
+ctx.globalAlpha=.78;ctx.fillStyle="#f0e5c9";ctx.fillRect(W*.31,base-30,W*.12,30);ctx.fillStyle="#344b49";ctx.beginPath();ctx.moveTo(W*.29,base-30);ctx.lineTo(W*.37,base-55);ctx.lineTo(W*.45,base-30);ctx.closePath();ctx.fill();ctx.strokeStyle="#76908a";ctx.lineWidth=1.4;for(var k=0;k<5;k++){ctx.beginPath();ctx.moveTo(W*(.3+k*.015),base-31-k*4);ctx.lineTo(W*(.44-k*.015),base-31-k*4);ctx.stroke()}
+var x=W*.77,y=base,s=Math.max(18,Math.min(34,W*.045));ctx.strokeStyle="#b94032";ctx.lineCap="square";ctx.lineWidth=s*.14;ctx.beginPath();ctx.moveTo(x-s*.55,y);ctx.lineTo(x-s*.48,y-s*.82);ctx.moveTo(x+s*.55,y);ctx.lineTo(x+s*.48,y-s*.82);ctx.stroke();ctx.lineWidth=s*.16;ctx.beginPath();ctx.moveTo(x-s*.82,y-s*.8);ctx.lineTo(x+s*.82,y-s*.8);ctx.stroke();ctx.lineWidth=s*.08;ctx.beginPath();ctx.moveTo(x-s*.95,y-s*.94);ctx.quadraticCurveTo(x,y-s*1.03,x+s*.95,y-s*.94);ctx.stroke();ctx.restore()}
+function hydrangeas(time){var groups=[{x:.08,y:.86,c:"#a99bd8"},{x:.19,y:.88,c:"#82a8d9"},{x:.72,y:.87,c:"#9a8dce"},{x:.88,y:.85,c:"#789fd0"}];groups.forEach(function(g,gi){var x=W*g.x,y=H*g.y;ctx.strokeStyle="#315f39";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y+18);ctx.quadraticCurveTo(x+Math.sin(time+gi)*3,y+8,x,y);ctx.stroke();for(var i=0;i<13;i++){var a=i*2.4,r=4+(i%4)*3;ctx.fillStyle=i%3===0?"#d4c7ec":g.c;ctx.beginPath();ctx.arc(x+Math.cos(a)*r,y+Math.sin(a)*r*.65,3.2,0,Math.PI*2);ctx.fill()}})}
+function gulls(time){ctx.strokeStyle="#385b6473";ctx.lineWidth=1.4;[[.15,.18],[.2,.14],[.57,.2]].forEach(function(p,i){var x=W*p[0]+Math.sin(time*.15+i)*8,y=H*p[1];ctx.beginPath();ctx.arc(x-4,y,5,Math.PI*1.08,Math.PI*1.85);ctx.arc(x+4,y,5,Math.PI*1.15,Math.PI*1.92);ctx.stroke()})}
+function draw(time){ctx.clearRect(0,0,W,H);ctx.save();ctx.translate(px*5,py*3);var sky=ctx.createLinearGradient(0,0,0,H*.69);sky.addColorStop(0,"#68b6da");sky.addColorStop(.52,"#b8e0e8");sky.addColorStop(1,"#ffe6bd");ctx.fillStyle=sky;ctx.fillRect(-10,-10,W+20,H+20);
+var sx=W*.74-px*8,sy=H*.16-py*5,sr=Math.min(W,H)*.065,glow=ctx.createRadialGradient(sx,sy,0,sx,sy,sr*4);glow.addColorStop(0,"#fff9d3d9");glow.addColorStop(.22,"#fff0ac40");glow.addColorStop(1,"#fff0ac00");ctx.fillStyle=glow;ctx.fillRect(sx-sr*4,sy-sr*4,sr*8,sr*8);ctx.fillStyle="#fff6cd";ctx.beginPath();ctx.arc(sx,sy,sr,0,Math.PI*2);ctx.fill();clouds.forEach(function(c){cloud(c,time)});gulls(time);
+[["#88a99e",.43,.03],["#5f9182",.48,.02],["#39745a",.53,.014]].forEach(function(layer,li){ctx.fillStyle=layer[0];ctx.beginPath();ctx.moveTo(-10,H);for(var x=-10;x<=W+20;x+=W/8){var y=H*layer[1]-Math.sin(x*layer[2]+li)*H*(.055+li*.018)-Math.cos(x*.007)*H*.028;ctx.lineTo(x,y)}ctx.lineTo(W+10,H);ctx.closePath();ctx.fill()});
+var top=H*.51,field=ctx.createLinearGradient(0,top,0,H);field.addColorStop(0,"#76a64c");field.addColorStop(.45,"#5d893c");field.addColorStop(1,"#315b2d");ctx.fillStyle=field;ctx.fillRect(-10,top,W+20,H-top+10);ctx.strokeStyle="#f0eeaf2e";ctx.lineWidth=1;for(var r=0;r<16;r++){var ry=top+(H-top)*r/16;ctx.beginPath();ctx.moveTo(0,ry);ctx.lineTo(W,ry+4);ctx.stroke()}japaneseDetails(time);
+var track=H*.61;ctx.fillStyle="#776b5a";ctx.fillRect(-10,track-5,W+20,25);ctx.fillStyle="#514b43";for(var s=-10;s<W+20;s+=25)ctx.fillRect(s,track-7,12,28);ctx.fillStyle="#b6afa3";ctx.fillRect(-10,track-5,W+20,3);ctx.fillRect(-10,track+17,W+20,3);ctx.fillStyle="#b99d70";ctx.beginPath();ctx.moveTo(-10,H*.72);ctx.lineTo(W+10,H*.705);ctx.lineTo(W+10,H*.77);ctx.lineTo(-10,H*.79);ctx.fill();
+[W*.22,W*.57,W*.9].forEach(function(x){ctx.strokeStyle="#554d49";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x,H*.28);ctx.lineTo(x,H*.73);ctx.stroke();ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x-25,H*.31);ctx.lineTo(x+25,H*.31);ctx.stroke()});ctx.strokeStyle="#40413e6b";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,H*.31);ctx.quadraticCurveTo(W*.5,H*.35,W,H*.31);ctx.stroke();
+train(time,track);mailbox();hydrangeas(time);grass.forEach(function(g){var sway=Math.sin(time*1.6+g.x*.07)*3;ctx.strokeStyle=g.t>.5?"#34682f":"#477b35";ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(g.x,H*.91);ctx.quadraticCurveTo(g.x+sway*.5,H*.91-g.h*.55,g.x+sway,H*.91-g.h);ctx.stroke()});
+flies.forEach(function(f){var x=f.x+Math.sin(time*.35+f.phase)*38,y=f.y+Math.cos(time*.47+f.phase)*15;ctx.fillStyle="#223133b3";ctx.beginPath();ctx.ellipse(x,y,7,1.7,.1,0,Math.PI*2);ctx.fill();ctx.fillStyle="#e1f5f86b";ctx.beginPath();ctx.ellipse(x-3,y-4,8,2,-.35,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(x-3,y+4,8,2,.35,0,Math.PI*2);ctx.fill()});ctx.restore()}
+function animate(now){if(hidden)return;var time=(now-start)/1000;draw(time);maybeChime(time);if(!reduced.matches)raf=requestAnimationFrame(animate)}
+function begin(){cancelAnimationFrame(raf);draw((performance.now()-start)/1000);if(!hidden&&!reduced.matches)raf=requestAnimationFrame(animate)}
+window.addEventListener("resize",function(){clearTimeout(resizeTimer);resizeTimer=setTimeout(function(){rebuild();begin()},120)});
+document.addEventListener("visibilitychange",function(){hidden=document.hidden;if(hidden)cancelAnimationFrame(raf);else begin()});
+if(reduced.addEventListener)reduced.addEventListener("change",begin);
+scene.addEventListener("pointermove",function(e){if(reduced.matches)return;var rect=scene.getBoundingClientRect();px=(e.clientX-rect.left)/rect.width-.5;py=(e.clientY-rect.top)/rect.height-.5});scene.addEventListener("pointerleave",function(){px=0;py=0});
+function initAudio(){if(audio)return;audio=new(window.AudioContext||window.webkitAudioContext)();ambience=audio.createGain();ambience.gain.value=.026;ambience.connect(audio.destination);var length=audio.sampleRate*2,buffer=audio.createBuffer(1,length,audio.sampleRate),data=buffer.getChannelData(0);for(var i=0;i<length;i++)data[i]=Math.random()*2-1;var source=audio.createBufferSource(),filter=audio.createBiquadFilter();source.buffer=buffer;source.loop=true;filter.type="bandpass";filter.frequency.value=4650;filter.Q.value=10;source.connect(filter);filter.connect(ambience);source.start()}
+function koto(freq,delay,volume){if(!sound||!audio||audio.state!=="running")return;var now=audio.currentTime+(delay||0),o=audio.createOscillator(),o2=audio.createOscillator(),g=audio.createGain(),f=audio.createBiquadFilter();o.type="triangle";o.frequency.value=freq;o2.type="sine";o2.frequency.value=freq*2.01;f.type="lowpass";f.frequency.value=2100;f.Q.value=1.8;g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(volume||.026,now+.012);g.gain.exponentialRampToValueAtTime(.0001,now+.72);o.connect(f);o2.connect(f);f.connect(g);g.connect(audio.destination);o.start(now);o2.start(now);o.stop(now+.75);o2.stop(now+.75)}
+function furin(delay){if(!sound||!audio||audio.state!=="running")return;var now=audio.currentTime+(delay||0);[1,2.71,4.08].forEach(function(mult,i){var o=audio.createOscillator(),g=audio.createGain();o.type="sine";o.frequency.value=784*mult;g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(.016/(i+1),now+.01);g.gain.exponentialRampToValueAtTime(.0001,now+1.8+i*.35);o.connect(g);g.connect(audio.destination);o.start(now);o.stop(now+2.3)})}
+function japaneseCue(type){if(!sound||!audio||audio.state!=="running")return;var notes=type==="success"?[392,493.88,659.25]:type==="share"?[659.25,880]:type==="reset"?[493.88,392]:type==="welcome"?[392,523.25,659.25]:[440];notes.forEach(function(note,i){koto(note,i*.12,type==="tap"?.014:.022)});if(type==="welcome")furin(.48)}
+function maybeChime(time){if(sound&&time>nextChime){furin(0);nextChime=time+20+seeded(Math.floor(time),12)*14}}
+function horn(){if(!audio||audio.state!=="running")return;var now=audio.currentTime;[294,370].forEach(function(freq){var o=audio.createOscillator(),g=audio.createGain(),f=audio.createBiquadFilter();o.type="sawtooth";o.frequency.value=freq;f.type="lowpass";f.frequency.value=520;g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(.018,now+.1);g.gain.setValueAtTime(.018,now+.48);g.gain.exponentialRampToValueAtTime(.0001,now+1);o.connect(f);f.connect(g);g.connect(audio.destination);o.start(now);o.stop(now+1.05)})}
+document.getElementById("soundToggle").addEventListener("click",function(){sound=!sound;this.setAttribute("aria-pressed",String(sound));this.setAttribute("aria-label",sound?"ปิดเสียงบรรยากาศ":"เปิดเสียงบรรยากาศ");this.querySelector(".sound-icon").textContent=sound?"🔊":"🔇";if(sound){initAudio();audio.resume().then(function(){nextChime=(performance.now()-start)/1000+12;japaneseCue("welcome")});toast("เปิดเสียงคามาคุระแล้ว")}else if(audio){audio.suspend();toast("ปิดเสียงแล้ว")}});
+rebuild();begin();
 })();
 </script>
 </body>
