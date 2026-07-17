@@ -2,10 +2,10 @@
 
 # SplitMate 🌿
 
-### หารบิลให้แฟร์ จบแบบไม่ค้างกัน
+### Fair bill splitting, wrapped in a playful Kamakura summer experience.
 
-เว็บหารค่าอาหาร ส่วนลด และค่าส่งในบรรยากาศฤดูร้อนที่ Kamakura  
-ใช้งานได้ทันทีบนเบราว์เซอร์ โดยไม่ต้องสมัครสมาชิก
+Split food costs, discounts, and delivery fees in seconds.<br>
+No account, no backend, and no installation required.
 
 **ไทย** · **English** · **日本語** · **中文**
 
@@ -13,67 +13,67 @@
 
 ---
 
-## SplitMate คืออะไร?
+## About SplitMate
 
-SplitMate ช่วยคำนวณยอดที่แต่ละคนต้องจ่ายเมื่อสั่งอาหารร่วมกัน โดยแบ่งส่วนลดตามสัดส่วนค่าอาหารและแบ่งค่าส่งเท่ากันทุกคน ผลลัพธ์สามารถคัดลอกหรือแชร์ให้กลุ่มเพื่อนได้ทันที
+SplitMate is a lightweight bill-splitting web app for shared meals. It distributes discounts proportionally, divides delivery fees equally, and produces a clear summary that is ready to copy or share with friends.
 
-## จุดเด่น
+## Highlights
 
-| | ความสามารถ |
+| | Feature |
 |---|---|
-| ⚖️ | แบ่งส่วนลดตามสัดส่วนค่าอาหารอย่างยุติธรรม |
-| 🧮 | คำนวณระดับสตางค์และกระจายเศษให้ยอดรวมตรงกัน |
-| 👥 | รองรับสมาชิก 2–10 คน พร้อมเลือกคนที่จ่ายก่อน |
-| 🌏 | เปลี่ยนภาษาได้ระหว่างไทย อังกฤษ ญี่ปุ่น และจีน |
-| 💾 | บันทึกข้อมูลและภาษาที่เลือกไว้บนอุปกรณ์อัตโนมัติ |
-| 📤 | รองรับ Web Share และการคัดลอกข้อความส่ง LINE |
-| ♿ | รองรับ keyboard, screen reader และ reduced motion |
-| 🎐 | มีเสียง koto/fūrin และฉาก Kamakura แบบ interactive |
+| ⚖️ | Proportional discount allocation based on each person's food subtotal |
+| 🧮 | Satang-level calculations with deterministic remainder distribution |
+| 👥 | Support for 2–10 people and a designated upfront payer |
+| 🌏 | Complete Thai, English, Japanese, and Simplified Chinese interfaces |
+| 💾 | Automatic local persistence for bill data and language preference |
+| 📤 | Web Share integration with a clipboard fallback |
+| ♿ | Keyboard navigation, screen-reader labels, and reduced-motion support |
+| 🎐 | Subtle koto and fūrin sounds with an interactive Kamakura canvas scene |
 
-## วิธีใช้งาน
+## How to use it
 
-1. กรอกชื่อและค่าอาหารของแต่ละคน
-2. ใส่ส่วนลดรวมและค่าส่ง
-3. เลือกคนที่เป็นผู้จ่ายก่อน
-4. กด **คำนวณให้เลย**
-5. คัดลอกหรือแชร์สรุปให้เพื่อน
+1. Enter each person's name and food subtotal.
+2. Add the total discount and delivery fee.
+3. Select the person who paid upfront.
+4. Choose **Calculate**.
+5. Copy or share the settlement summary with the group.
 
-## หลักการคำนวณ
+## Calculation model
 
-- ส่วนลดแบ่งตามสัดส่วนค่าอาหารของแต่ละคน
-- ค่าส่งแบ่งเท่ากันทุกคน
-- จำนวนเงินคำนวณเป็นหน่วยสตางค์
-- เศษจากการหารกระจายแบบ deterministic เพื่อให้ยอดรายคนรวมตรงกับยอดสุทธิ
-- ส่วนลดสูงสุดไม่เกินค่าอาหารรวม
+- Discounts are distributed in proportion to each person's food subtotal.
+- Delivery fees are divided equally among everyone.
+- All calculations use integer satang values.
+- Remainders are distributed deterministically so individual totals always match the net bill.
+- Applied discounts are capped at the total food subtotal.
 
-## เริ่มใช้งาน
+## Run locally
 
-โปรเจกต์เป็น static single-page app ไม่มีขั้นตอน build และไม่มี dependency
+SplitMate is a dependency-free static single-page app with no build step.
 
     git clone https://github.com/panyawat56/grabsplit-kamakura.git
     cd grabsplit-kamakura
 
-จากนั้นเปิด **index.html** ด้วยเบราว์เซอร์ หรือใช้ static file server ที่ต้องการ
+Open **index.html** in a browser or serve the folder with any static file server.
 
-## เทคโนโลยี
+## Built with
 
 - Semantic HTML
 - Responsive CSS
 - Vanilla JavaScript
-- Canvas 2D animation
+- Canvas 2D
 - Web Audio API
-- Web Share และ Clipboard API
+- Web Share and Clipboard APIs
 - Local Storage
 
-## ความเป็นส่วนตัว
+## Privacy
 
-ข้อมูลทั้งหมดประมวลผลและบันทึกอยู่ภายในอุปกรณ์ ไม่มี backend, analytics หรือการส่งข้อมูลขึ้นเซิร์ฟเวอร์
+All bill data is processed and stored locally on the device. SplitMate has no backend, analytics, account system, or data collection.
 
-## โครงสร้างโปรเจกต์
+## Project structure
 
     .
-    ├── index.html   # UI, calculation engine, translations, canvas และ audio
-    └── README.md    # เอกสารแนะนำโปรเจกต์
+    ├── index.html   # Interface, calculation engine, translations, canvas, and audio
+    └── README.md    # Project documentation
 
 ---
 
