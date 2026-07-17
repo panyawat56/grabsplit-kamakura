@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GrabSplit — 鎌倉の夏 Kamakura Edition</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@400;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:#1a1520;overflow:hidden;width:100vw;height:100vh;font-family:'Inter',-apple-system,sans-serif;color:#f0eff4}
+        #c{display:block;width:100%;height:100%;position:absolute;top:0;left:0;z-index:1}
+        .vig{position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(circle,transparent 55%,rgba(0,0,0,0.4)100%);z-index:2;pointer-events:none}
+
+        /* Toggle Button */
+        .toggle-calc{
+            position:absolute;top:18px;right:18px;z-index:20;
+            background:rgba(0,0,0,0.35);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+            border:1px solid rgba(255,255,255,0.1);border-radius:14px;
+            color:#fff;font-family:'Inter',sans-serif;font-size:13px;font-weight:700;
+            padding:12px 20px;cursor:pointer;transition:all .25s;
+            display:flex;align-items:center;gap:8px;
+        }
+        .toggle-calc:hover{background:rgba(0,0,0,0.5);border-color:rgba(255,255,255,0.2)}
+        .toggle-calc.active{background:rgba(0,177,79,0.2);border-color:rgba(0,177,79,0.3)}
+
+        /* Calculator Panel */
+        .calc-panel{
+            position:absolute;top:0;right:0;bottom:0;width:440px;z-index:15;
+            background:rgba(12,15,20,0.82);backdrop-filter:blur(25px);-webkit-backdrop-filter:blur(25px);
+            border-left:1px solid rgba(255,255,255,0.06);
+            transform:translateX(100%);transition:transform .4s cubic-bezier(.16,1,.3,1);
+            display:flex;flex-direction:column;
+            box-shadow:-20px 0 60px rgba(0,0,0,0.4);
+        }
+        .calc-panel.open{transform:translateX(0)}
+
+        .calc-header{
+            padding:20px 24px 16px;border-bottom:1px solid rgba(255,255,255,0.06);
+            display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+        }
+        .calc-logo{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+        .calc-logo .gr{color:#00d25e}
+        .calc-sub{font-size:10px;color:rgba(255,255,255,0.35);margin-top:2px;letter-spacing:1px;text-transform:uppercase}
+        .calc-close{background:transparent;border:none;color:rgba(255,255,255,0.4);font-size:22px;cursor:pointer;padding:4px 8px}
+        .calc-close:hover{color:#fff}
+
+        .calc-body{flex:1;overflow-y:auto;padding:20px 24px 30px}
+        .calc-body::-webkit-scrollbar{width:5px}
+        .calc-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:3px}
+
+        /* Cards inside panel */
+        .gc{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:14px;padding:16px;margin-bottom:12px}
+        .gc-title{font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+
+        .input-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;animation:fadeIn .25s ease}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+        .pnum{width:24px;height:24px;background:rgba(0,177,79,0.1);color:#00d25e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+        .iname,.iprice{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px 12px;color:#fff;font-family:inherit;font-size:13px;outline:none;transition:border-color .2s}
+        .iname:focus,.iprice:focus{border-color:#00b14f}
+        .iname{flex:1;min-width:0}
+        .iprice{width:100px;text-align:right}
+        .btn-rm{width:24px;height:24px;background:rgba(255,71,87,0.08);border:none;border-radius:50%;color:#ff4757;font-size:14px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+        .btn-rm:hover{background:#ff4757;color:#fff}
+
+        .payer-row{display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(0,177,79,0.06);border-radius:10px;border:1px solid rgba(0,177,79,0.12)}
+        .payer-label{font-size:11px;font-weight:600;color:#00d25e;white-space:nowrap}
+        .payer-select{flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:8px 10px;color:#fff;font-family:inherit;font-size:12px;outline:none}
+
+        .fee-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+        .fee-group{display:flex;flex-direction:column;gap:4px}
+        .fee-label{font-size:11px;font-weight:600;color:rgba(255,255,255,0.4)}
+        .fee-input{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px 12px;color:#fff;font-family:inherit;font-size:13px;outline:none;text-align:right}
+        .fee-input:focus{border-color:#00b14f}
+
+        .btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:13px;border:none;border-radius:12px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
+        .btn-add{background:rgba(255,255,255,0.02);color:rgba(255,255,255,0.35);border:1px dashed rgba(255,255,255,0.08);margin-top:4px}
+        .btn-add:hover{border-color:#00b14f;color:#00d25e}
+        .btn-calc{background:linear-gradient(135deg,#00b14f,#00d25e);color:#fff;font-size:14px;box-shadow:0 4px 18px rgba(0,177,79,0.3);margin-top:4px}
+        .btn-calc:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(0,177,79,0.4)}
+        .btn-calc:active{transform:scale(.98)}
+        .btn-copy{background:rgba(255,255,255,0.03);color:#fff;border:1px solid rgba(255,255,255,0.06);font-size:12px;margin-top:8px}
+        .btn-copy:hover{border-color:#00b14f}
+        .btn-copy.copied{background:rgba(0,177,79,0.1);color:#00d25e;border-color:#00b14f}
+
+        /* Results */
+        .results{display:none;animation:fadeIn .3s ease}
+        .results.show{display:block}
+        .summary-bar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+        .summary-item{text-align:center;padding:10px 6px;background:rgba(255,255,255,0.03);border-radius:10px}
+        .summary-label{font-size:9px;font-weight:600;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.5px}
+        .summary-value{font-size:16px;font-weight:800;margin-top:3px}
+        .sv-blue{color:#3b82f6} .sv-orange{color:#ffa502} .sv-green{color:#00d25e}
+
+        .rp{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:rgba(255,255,255,0.03);border-radius:12px;margin-bottom:6px;border-left:3px solid #00b14f}
+        .rp.is-payer{border-left-color:#ffa502;background:rgba(255,165,2,0.03)}
+        .rp-left{display:flex;flex-direction:column;gap:2px}
+        .rp-name{font-size:13px;font-weight:700}
+        .rp-detail{font-size:10px;color:rgba(255,255,255,0.35)}
+        .rp-badge{font-size:8px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(255,165,2,0.12);color:#ffa502;margin-left:6px}
+        .rp-right{text-align:right}
+        .rp-amount{font-size:16px;font-weight:800}
+        .rp-amount.owes{color:#ff4757} .rp-amount.receives{color:#00d25e}
+        .rp-sub{font-size:9px;color:rgba(255,255,255,0.35);margin-top:2px}
+
+        .bd-toggle{display:flex;align-items:center;justify-content:center;font-size:11px;color:rgba(255,255,255,0.35);background:transparent;border:none;cursor:pointer;padding:8px;width:100%;margin-top:4px}
+        .bd-toggle:hover{color:#fff}
+        .bd-content{display:none;padding:12px;background:rgba(255,255,255,0.03);border-radius:10px;margin-top:6px;font-size:11px;line-height:1.8;color:rgba(255,255,255,0.4)}
+        .bd-content.show{display:block}
+        .bd-content strong{color:#fff}
+
+        /* Sound button */
+        .sound-btn{
+            position:absolute;bottom:18px;right:18px;z-index:20;
+            background:rgba(0,0,0,0.3);backdrop-filter:blur(10px);
+            border:1px solid rgba(255,255,255,0.08);border-radius:30px;
+            color:rgba(255,255,255,0.5);font-family:'Inter',sans-serif;
+            font-size:11px;padding:8px 16px;cursor:pointer;transition:all .3s;
+        }
+        .sound-btn:hover{background:rgba(0,0,0,0.45);color:#fff}
+        .sound-btn.active{color:#fff;border-color:rgba(255,255,255,0.2)}
+
+        /* Scene title */
+        .scene-title{
+            position:absolute;top:18px;left:18px;z-index:10;pointer-events:none;
+            opacity:0;animation:fadeTitle 2s ease 1s forwards;
+        }
+        @keyframes fadeTitle{to{opacity:1}}
+        .scene-jp{font-family:'Kaisei Decol',serif;font-size:28px;font-weight:700;color:rgba(255,255,255,0.8);text-shadow:0 2px 15px rgba(0,0,0,0.3);letter-spacing:6px}
+        .scene-sub{font-size:10px;font-weight:300;color:rgba(255,255,255,0.4);letter-spacing:3px;margin-top:3px;text-transform:uppercase}
+
+        @media(max-width:768px){
+            .calc-panel{width:100%;border-left:none;border-top:1px solid rgba(255,255,255,0.06)}
+            .scene-title{top:auto;bottom:60px;left:16px}
+            .scene-jp{font-size:20px}
+        }
+    </style>
+</head>
+<body>
+    <div class="vig"></div>
+    <canvas id="c"></canvas>
+
+    <div class="scene-title">
+        <div class="scene-jp">鎌倉の夏</div>
+        <div class="scene-sub">Kamakura Summer Edition</div>
+    </div>
+
+    <button class="toggle-calc" id="toggleCalc">🧮 GrabSplit</button>
+    <button class="sound-btn" id="soundBtn">🔇 Sound</button>
+
+    <!-- GrabSplit Calculator Panel -->
+    <div class="calc-panel" id="calcPanel">
+        <div class="calc-header">
+            <div>
+                <div class="calc-logo"><span class="gr">Grab</span>Split</div>
+                <div class="calc-sub">หารบิลแบบยุติธรรม</div>
+            </div>
+            <button class="calc-close" id="calcClose">&times;</button>
+        </div>
+        <div class="calc-body">
+            <div class="gc">
+                <div class="gc-title">👥 รายชื่อ & ราคาอาหาร</div>
+                <div id="peopleList"></div>
+                <button class="btn btn-add" id="btnAdd">+ เพิ่มคน</button>
+            </div>
+            <div class="gc">
+                <div class="gc-title">💳 ใครจ่าย?</div>
+                <div class="payer-row">
+                    <span class="payer-label">คนจ่าย:</span>
+                    <select class="payer-select" id="payerSelect"></select>
+                </div>
+            </div>
+            <div class="gc">
+                <div class="gc-title">🏷️ ส่วนลด & ค่าส่ง</div>
+                <div class="fee-grid">
+                    <div class="fee-group"><span class="fee-label">ส่วนลด (฿)</span><input type="number" class="fee-input" id="inputDiscount" placeholder="0" min="0" value="0"></div>
+                    <div class="fee-group"><span class="fee-label">ค่าส่ง (฿)</span><input type="number" class="fee-input" id="inputDelivery" placeholder="0" min="0" value="0"></div>
+                </div>
+            </div>
+            <button class="btn btn-calc" id="btnCalc">🧮 คำนวณเลย!</button>
+            <div class="results" id="resultsDiv">
+                <div class="gc" style="margin-top:12px">
+                    <div class="gc-title">📊 สรุปผล</div>
+                    <div class="summary-bar" id="summaryBar"></div>
+                    <div id="resultsList"></div>
+                    <button class="bd-toggle" id="bdToggle">📋 ดูวิธีคิดละเอียด ▼</button>
+                    <div class="bd-content" id="bdContent"></div>
+                    <button class="btn btn-copy" id="btnCopy">📋 คัดลอกส่ง LINE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+(function(){
+"use strict";
+
+// ==================== GRABSPLIT LOGIC ====================
+const MAX_P=10;
+let people=[{name:'',price:''},{name:'',price:''},{name:'',price:''}];
+const listEl=document.getElementById('peopleList'),payerEl=document.getElementById('payerSelect');
+
+function esc(s){return s.replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function fmt(n){return n.toFixed(2).replace(/\.00$/,'').replace(/(\.\d)0$/,'$1');}
+
+function renderPeople(){
+    listEl.innerHTML='';payerEl.innerHTML='';
+    people.forEach(function(p,i){
+        const row=document.createElement('div');row.className='input-row';
+        row.innerHTML='<div class="pnum">'+(i+1)+'</div><input type="text" class="iname" placeholder="ชื่อ" maxlength="20" value="'+esc(p.name)+'" data-i="'+i+'" data-f="name"><input type="number" class="iprice" placeholder="฿ ราคา" min="0" value="'+(p.price===''?'':p.price)+'" data-i="'+i+'" data-f="price">'+(people.length>2?'<button class="btn-rm" data-i="'+i+'">&times;</button>':'');
+        listEl.appendChild(row);
+        const opt=document.createElement('option');opt.value=i;opt.textContent=p.name||('คนที่ '+(i+1));payerEl.appendChild(opt);
+    });
+    listEl.querySelectorAll('input').forEach(function(inp){
+        inp.addEventListener('input',function(){
+            const idx=parseInt(this.dataset.i),f=this.dataset.f;
+            people[idx][f]=this.value;
+            if(f==='name'){const opts=payerEl.querySelectorAll('option');if(opts[idx])opts[idx].textContent=this.value||('คนที่ '+(idx+1));}
+        });
+    });
+    listEl.querySelectorAll('.btn-rm').forEach(function(b){b.addEventListener('click',function(){people.splice(parseInt(this.dataset.i),1);renderPeople();});});
+    document.getElementById('btnAdd').style.display=people.length>=MAX_P?'none':'';
+}
+document.getElementById('btnAdd').addEventListener('click',function(){
+    if(people.length>=MAX_P)return;people.push({name:'',price:''});renderPeople();
+    setTimeout(function(){const inp=listEl.querySelectorAll('.iname');if(inp.length)inp[inp.length-1].focus();},50);
+});
+
+document.getElementById('btnCalc').addEventListener('click',function(){
+    const parsed=people.map(function(p,i){return{name:p.name.trim()||('คนที่ '+(i+1)),food:parseFloat(p.price)||0};});
+    const discount=parseFloat(document.getElementById('inputDiscount').value)||0;
+    const delivery=parseFloat(document.getElementById('inputDelivery').value)||0;
+    const payerIdx=parseInt(payerEl.value),numP=parsed.length;
+    const totalFood=parsed.reduce(function(s,p){return s+p.food;},0);
+    if(totalFood<=0){alert('กรอกราคาอาหารอย่างน้อย 1 คน');return;}
+    const effDiscount=Math.min(discount,totalFood),deliveryEach=delivery/numP;
+    const totalPaid=totalFood-effDiscount+delivery;
+    const results=parsed.map(function(p,i){
+        const ratio=p.food/totalFood,discAmt=effDiscount*ratio,foodAfter=p.food-discAmt;
+        return{name:p.name,food:p.food,ratio:ratio,discAmt:discAmt,foodAfter:foodAfter,delShare:deliveryEach,total:foodAfter+deliveryEach,isPayer:i===payerIdx};
+    });
+    const rd=document.getElementById('resultsDiv');rd.classList.add('show');
+    document.getElementById('summaryBar').innerHTML='<div class="summary-item"><div class="summary-label">ราคารวม</div><div class="summary-value sv-blue">฿'+fmt(totalFood)+'</div></div><div class="summary-item"><div class="summary-label">ส่วนลด</div><div class="summary-value sv-orange">-฿'+fmt(effDiscount)+'</div></div><div class="summary-item"><div class="summary-label">จ่ายจริง</div><div class="summary-value sv-green">฿'+fmt(totalPaid)+'</div></div>';
+    let html='';const payerName=results[payerIdx].name;
+    results.forEach(function(r){
+        const isPayer=r.isPayer;let ac,at,st;
+        if(isPayer){ac='receives';at='฿'+fmt(totalPaid-r.total);st='ได้รับคืน';}
+        else{ac='owes';at='฿'+fmt(r.total);st='โอนให้ '+payerName;}
+        html+='<div class="rp '+(isPayer?'is-payer':'')+'"><div class="rp-left"><div class="rp-name">'+r.name+(isPayer?' <span class="rp-badge">คนจ่าย</span>':'')+'</div><div class="rp-detail">อาหาร ฿'+fmt(r.food)+' → ลด ฿'+fmt(r.discAmt)+' + ส่ง ฿'+fmt(r.delShare)+'</div></div><div class="rp-right"><div class="rp-amount '+ac+'">'+at+'</div><div class="rp-sub">'+st+'</div></div></div>';
+    });
+    document.getElementById('resultsList').innerHTML=html;
+    let bd='<strong>วิธีคิด:</strong><br>• อาหารรวม: ฿'+fmt(totalFood)+'<br>• ส่วนลด: -฿'+fmt(effDiscount)+'<br>• ค่าส่ง: +฿'+fmt(delivery)+' (หาร '+numP+' = ฿'+fmt(deliveryEach)+'/คน)<br>• จ่ายจริง: ฿'+fmt(totalPaid)+'<br><br><strong>แต่ละคน:</strong><br>';
+    results.forEach(function(r){bd+='• <strong>'+r.name+'</strong>: ฿'+fmt(r.food)+' ('+(r.ratio*100).toFixed(1)+'%) → ลด ฿'+fmt(r.discAmt)+' + ส่ง ฿'+fmt(r.delShare)+' = <strong>฿'+fmt(r.total)+'</strong><br>';});
+    document.getElementById('bdContent').innerHTML=bd;
+    rd.dataset.copy=buildCopy(results,payerIdx,totalFood,effDiscount,delivery,totalPaid);
+    setTimeout(function(){rd.scrollIntoView({behavior:'smooth',block:'start'});},100);
+});
+
+function buildCopy(res,pi,tf,d,del,tp){
+    const pn=res[pi].name;let t='🧾 GrabSplit — สรุปหารบิล\n━━━━━━━━━━━━━━━\n💰 รวม: ฿'+fmt(tf)+' | ลด: -฿'+fmt(d)+' | ส่ง: +฿'+fmt(del)+'\n✅ จ่ายจริง: ฿'+fmt(tp)+' (โดย '+pn+')\n━━━━━━━━━━━━━━━\n';
+    res.forEach(function(r){t+=r.isPayer?'👑 '+r.name+' (คนจ่าย) — ได้คืน ฿'+fmt(tp-r.total)+'\n':'• '+r.name+' → โอน ฿'+fmt(r.total)+' ให้ '+pn+'\n';});
+    t+='━━━━━━━━━━━━━━━\nby GrabSplit 🍽️';return t;
+}
+document.getElementById('btnCopy').addEventListener('click',function(){
+    const txt=document.getElementById('resultsDiv').dataset.copy||'',btn=this;
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){btn.textContent='✅ คัดลอกแล้ว!';btn.classList.add('copied');setTimeout(function(){btn.textContent='📋 คัดลอกส่ง LINE';btn.classList.remove('copied');},2000);});}
+    else{const ta=document.createElement('textarea');ta.value=txt;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);btn.textContent='✅ คัดลอกแล้ว!';btn.classList.add('copied');setTimeout(function(){btn.textContent='📋 คัดลอกส่ง LINE';btn.classList.remove('copied');},2000);}
+});
+document.getElementById('bdToggle').addEventListener('click',function(){const el=document.getElementById('bdContent'),s=!el.classList.contains('show');el.classList.toggle('show');this.innerHTML=s?'📋 ซ่อน ▲':'📋 ดูวิธีคิดละเอียด ▼';});
+
+// Panel toggle
+const panel=document.getElementById('calcPanel');
+document.getElementById('toggleCalc').addEventListener('click',function(){panel.classList.toggle('open');this.classList.toggle('active');});
+document.getElementById('calcClose').addEventListener('click',function(){panel.classList.remove('open');document.getElementById('toggleCalc').classList.remove('active');});
+
+renderPeople();
+
+// ==================== KAMAKURA SCENE ====================
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+let W,H;function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}resize();
+window.addEventListener('resize',resize);
+let t=0;const wp=Math.random()*1000;
+
+// Audio
+let audioCtx=null,soundOn=false;
+function initAudio(){
+    if(audioCtx)return;audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    const bl=audioCtx.sampleRate*2,nb=audioCtx.createBuffer(1,bl,audioCtx.sampleRate),nd=nb.getChannelData(0);
+    for(let i=0;i<bl;i++)nd[i]=Math.random()*2-1;
+    // Cicada 1
+    const c1s=audioCtx.createBufferSource();c1s.buffer=nb;c1s.loop=true;
+    const c1f=audioCtx.createBiquadFilter();c1f.type='bandpass';c1f.frequency.value=4200;c1f.Q.value=8;
+    const c1l=audioCtx.createOscillator();c1l.frequency.value=0.15;const c1lg=audioCtx.createGain();c1lg.gain.value=0.06;c1l.connect(c1lg);
+    const c1v=audioCtx.createGain();c1v.gain.value=0.07;c1lg.connect(c1v.gain);c1s.connect(c1f);c1f.connect(c1v);c1l.start();
+    // Cicada 2
+    const c2s=audioCtx.createBufferSource();c2s.buffer=nb;c2s.loop=true;
+    const c2f=audioCtx.createBiquadFilter();c2f.type='bandpass';c2f.frequency.value=5800;c2f.Q.value=12;
+    const c2l=audioCtx.createOscillator();c2l.frequency.value=6;const c2lg=audioCtx.createGain();c2lg.gain.value=0.04;c2l.connect(c2lg);
+    const c2v=audioCtx.createGain();c2v.gain.value=0.05;c2lg.connect(c2v.gain);c2s.connect(c2f);c2f.connect(c2v);c2l.start();
+    const cg=audioCtx.createGain();cg.gain.value=0.8;c1v.connect(cg);c2v.connect(cg);cg.connect(audioCtx.destination);c1s.start();c2s.start();
+    // Wind
+    const ws=audioCtx.createBufferSource();ws.buffer=nb;ws.loop=true;
+    const wf=audioCtx.createBiquadFilter();wf.type='lowpass';wf.frequency.value=300;
+    const wg=audioCtx.createGain();wg.gain.value=0.03;ws.connect(wf);wf.connect(wg);wg.connect(audioCtx.destination);ws.start();
+}
+function playHorn(){
+    if(!audioCtx||!soundOn)return;const now=audioCtx.currentTime;
+    [320,400].forEach(function(fr){const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sawtooth';o.frequency.value=fr;
+    const f=audioCtx.createBiquadFilter();f.type='lowpass';f.frequency.value=600;
+    g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(0.05,now+0.1);g.gain.setValueAtTime(0.05,now+0.8);g.gain.linearRampToValueAtTime(0,now+1.2);
+    o.connect(f);f.connect(g);g.connect(audioCtx.destination);o.start(now);o.stop(now+1.3);});
+}
+function playClack(){
+    if(!audioCtx||!soundOn)return;const now=audioCtx.currentTime;
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='square';o.frequency.value=80;
+    g.gain.setValueAtTime(0.025,now);g.gain.exponentialRampToValueAtTime(0.0001,now+0.03);
+    o.connect(g);g.connect(audioCtx.destination);o.start(now);o.stop(now+0.04);
+}
+document.getElementById('soundBtn').addEventListener('click',function(){
+    soundOn=!soundOn;this.textContent=soundOn?'🔊 Sound':'🔇 Sound';this.classList.toggle('active',soundOn);
+    if(soundOn){initAudio();if(audioCtx.state==='suspended')audioCtx.resume();}else if(audioCtx)audioCtx.suspend();
+});
+
+// Scene drawing
+function drawSky(){const g=ctx.createLinearGradient(0,0,0,H*0.65);g.addColorStop(0,'#5ba3d9');g.addColorStop(0.4,'#7dbde8');g.addColorStop(0.7,'#c4dff0');g.addColorStop(1,'#f0e6d3');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);}
+function drawSun(){const sx=W*0.75,sy=H*0.15,sr=Math.min(W,H)*0.06;const g=ctx.createRadialGradient(sx,sy,sr*0.2,sx,sy,sr*4);g.addColorStop(0,'rgba(255,240,200,0.35)');g.addColorStop(1,'rgba(255,240,200,0)');ctx.fillStyle=g;ctx.fillRect(sx-sr*5,sy-sr*5,sr*10,sr*10);ctx.fillStyle='#fff5d4';ctx.beginPath();ctx.arc(sx,sy,sr,0,Math.PI*2);ctx.fill();}
+
+const clouds=[];for(let i=0;i<5;i++)clouds.push({x:Math.random()*W,y:H*0.08+Math.random()*H*0.2,w:80+Math.random()*120,sp:0.15+Math.random()*0.2,op:0.3+Math.random()*0.3});
+function drawClouds(){clouds.forEach(function(c){c.x+=c.sp*(0.5+Math.sin(wp+t*0.0003)*0.5);if(c.x>W+c.w)c.x=-c.w*2;ctx.fillStyle='rgba(255,255,255,'+c.op+')';ctx.beginPath();ctx.arc(c.x,c.y,c.w*0.2,0,Math.PI*2);ctx.arc(c.x+c.w*0.2,c.y-c.w*0.08,c.w*0.25,0,Math.PI*2);ctx.arc(c.x+c.w*0.45,c.y,c.w*0.22,0,Math.PI*2);ctx.arc(c.x+c.w*0.65,c.y+c.w*0.02,c.w*0.18,0,Math.PI*2);ctx.fill();});}
+
+function drawMountains(){
+    [[0.38,'#8ba4b8'],[0.42,'#6d8fa5'],[0.47,'#4a7566']].forEach(function(l){
+        ctx.fillStyle=l[1];ctx.beginPath();ctx.moveTo(0,H*l[0]);
+        for(let x=0;x<=W;x+=W/8){const py=H*l[0]-Math.sin(x*0.003+l[0]*50)*H*0.12-Math.cos(x*0.007)*H*0.04;ctx.lineTo(x,py);}
+        ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();ctx.fill();
+    });
+}
+
+function drawRiceFields(){
+    const ft=H*0.48;const fg=ctx.createLinearGradient(0,ft,0,H);fg.addColorStop(0,'#5a8c3a');fg.addColorStop(0.3,'#4d7a30');fg.addColorStop(0.7,'#3d6525');fg.addColorStop(1,'#2d4c1a');ctx.fillStyle=fg;ctx.fillRect(0,ft,W,H-ft);
+    const wo=Math.sin(t*0.002+wp)*3;
+    for(let row=0;row<35;row++){const ry=ft+row*((H-ft)/35);const p=(ry-ft)/(H-ft);const rh=2+p*6;const sp=8+p*15;
+    for(let col=-2;col<W/sp+2;col++){const rx=col*sp+(row%2)*sp*0.5;const sw=Math.sin(t*0.003+col*0.5+row*0.3)*wo*p;
+    ctx.strokeStyle=p>0.3?'rgba(80,140,40,0.3)':'rgba(100,170,60,0.2)';ctx.lineWidth=0.5+p*1.5;ctx.beginPath();ctx.moveTo(rx,ry);ctx.quadraticCurveTo(rx+sw,ry-rh*0.6,rx+sw*1.2,ry-rh);ctx.stroke();}}
+    for(let i=0;i<6;i++){ctx.fillStyle='rgba(120,180,220,0.06)';ctx.fillRect(0,ft+(H-ft)*(i/6)+5,W,2);}
+}
+
+function drawTrack(){const ty=H*0.58;ctx.strokeStyle='#777';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,ty);ctx.lineTo(W,ty);ctx.stroke();ctx.beginPath();ctx.moveTo(0,ty+14);ctx.lineTo(W,ty+14);ctx.stroke();ctx.fillStyle='#5a4a3a';for(let x=0;x<W;x+=25)ctx.fillRect(x,ty-3,12,20);ctx.fillStyle='#8a8070';ctx.fillRect(0,ty-5,W,2);ctx.fillRect(0,ty+16,W,2);}
+function drawPath(){const py=H*0.72;ctx.fillStyle='#a08b6c';ctx.beginPath();ctx.moveTo(0,py);ctx.lineTo(W,py-5);ctx.lineTo(W,py+18);ctx.lineTo(0,py+22);ctx.closePath();ctx.fill();ctx.fillStyle='#8e7a5e';ctx.fillRect(0,py+1,W,2);}
+
+// Train
+let trainX=-600,trainSpd=2.5,trainDir=1,trainTmr=0,trainOn=false,hornDone=false,clkTmr=0;
+function updateTrain(){trainTmr++;if(!trainOn&&trainTmr>600){trainOn=true;trainX=trainDir>0?-600:W+100;trainSpd=2+Math.random()*1.5;trainTmr=0;hornDone=false;}
+if(trainOn){trainX+=trainSpd*trainDir;clkTmr++;if(clkTmr%12===0)playClack();if(!hornDone&&trainX>-100&&trainX<W*0.3){playHorn();hornDone=true;}if((trainDir>0&&trainX>W+200)||(trainDir<0&&trainX<-700)){trainOn=false;trainDir*=-1;}}}
+function drawTrain(){if(!trainOn)return;const ty=H*0.53,tw=450,th=55;ctx.save();
+ctx.fillStyle='rgba(0,0,0,0.15)';ctx.fillRect(trainX-5,ty+th-5,tw+10,12);
+const bg=ctx.createLinearGradient(0,ty,0,ty+th);bg.addColorStop(0,'#2d6b3f');bg.addColorStop(0.4,'#357a48');bg.addColorStop(1,'#1f4f2d');ctx.fillStyle=bg;
+ctx.beginPath();if(trainDir>0){ctx.moveTo(trainX+20,ty);ctx.lineTo(trainX+tw,ty);ctx.lineTo(trainX+tw+25,ty+th*0.3);ctx.lineTo(trainX+tw+25,ty+th);ctx.lineTo(trainX,ty+th);ctx.lineTo(trainX,ty+5);ctx.quadraticCurveTo(trainX,ty,trainX+20,ty);}else{ctx.moveTo(trainX+tw-20,ty);ctx.lineTo(trainX,ty);ctx.lineTo(trainX-25,ty+th*0.3);ctx.lineTo(trainX-25,ty+th);ctx.lineTo(trainX+tw,ty+th);ctx.lineTo(trainX+tw,ty+5);ctx.quadraticCurveTo(trainX+tw,ty,trainX+tw-20,ty);}ctx.closePath();ctx.fill();
+ctx.fillStyle='#f0e8d0';ctx.fillRect(trainX,ty+th*0.35,tw,th*0.12);
+ctx.fillStyle='#a8d8ea';for(let i=0;i<8;i++){const wx=trainX+30+i*((tw-60)/8);ctx.fillRect(wx,ty+8,32,20);ctx.fillStyle='rgba(255,255,255,0.3)';ctx.fillRect(wx,ty+8,32,6);ctx.fillStyle='#a8d8ea';}
+ctx.fillStyle='#333';for(let i=0;i<6;i++){const wx=trainX+40+i*((tw-40)/5);ctx.beginPath();ctx.arc(wx,ty+th+2,7,0,Math.PI*2);ctx.fill();ctx.fillStyle='#555';ctx.beginPath();ctx.arc(wx,ty+th+2,3,0,Math.PI*2);ctx.fill();ctx.fillStyle='#333';}
+const hlx=trainDir>0?trainX+tw+20:trainX-20;ctx.fillStyle='#ffe066';ctx.shadowColor='#ffe066';ctx.shadowBlur=12;ctx.beginPath();ctx.arc(hlx,ty+th*0.4,5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.restore();}
+
+// Mailbox
+function drawMailbox(){const mx=W*0.15,my=H*0.64,mw=28,mh=60;ctx.save();ctx.fillStyle='rgba(0,0,0,0.2)';ctx.beginPath();ctx.ellipse(mx,my+mh,mw*0.8,6,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#c0392b';ctx.fillRect(mx-5,my+mh*0.5,10,mh*0.5);ctx.fillStyle='#e74c3c';ctx.beginPath();ctx.moveTo(mx-mw/2,my+mh*0.5);ctx.lineTo(mx+mw/2,my+mh*0.5);ctx.lineTo(mx+mw/2,my+8);ctx.quadraticCurveTo(mx+mw/2,my,mx+mw/2-8,my);ctx.lineTo(mx-mw/2+8,my);ctx.quadraticCurveTo(mx-mw/2,my,mx-mw/2,my+8);ctx.closePath();ctx.fill();ctx.fillStyle='#c0392b';ctx.beginPath();ctx.ellipse(mx,my+2,mw/2+3,8,0,Math.PI,Math.PI*2);ctx.fill();ctx.fillStyle='#8b1a1a';ctx.fillRect(mx-mw*0.3,my+mh*0.22,mw*0.6,4);ctx.fillStyle='#fff';ctx.font='bold 11px sans-serif';ctx.textAlign='center';ctx.fillText('〒',mx,my+mh*0.42);ctx.fillStyle='rgba(255,255,255,0.15)';ctx.fillRect(mx-mw/2+3,my+6,5,mh*0.35);ctx.restore();}
+
+// Poles
+function drawPoles(){[W*0.35,W*0.65,W*0.92].forEach(function(px){ctx.strokeStyle='#4a4040';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(px,H*0.25);ctx.lineTo(px,H*0.72);ctx.stroke();ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(px-25,H*0.28);ctx.lineTo(px+25,H*0.28);ctx.stroke();ctx.strokeStyle='rgba(80,70,70,0.3)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px-25,H*0.28);ctx.quadraticCurveTo(px+80,H*0.3,px+150,H*0.28);ctx.stroke();});}
+
+// Foreground
+function drawFG(){const gy=H*0.88;for(let x=0;x<W;x+=6){const h=10+Math.random()*25,sw=Math.sin(t*0.003+x*0.1)*3;ctx.strokeStyle=x%18<9?'#3a6520':'#4a7830';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x,gy);ctx.quadraticCurveTo(x+sw,gy-h*0.6,x+sw*1.3,gy-h);ctx.stroke();}
+[{x:W*0.08,y:H*0.86,c:'#ffb7c5'},{x:W*0.45,y:H*0.87,c:'#c5b0ff'},{x:W*0.72,y:H*0.85,c:'#ffb7c5'},{x:W*0.88,y:H*0.86,c:'#fff3b0'}].forEach(function(fl){const sw=Math.sin(t*0.002+fl.x*0.05)*2;ctx.strokeStyle='#3a6520';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(fl.x,fl.y+10);ctx.quadraticCurveTo(fl.x+sw,fl.y+3,fl.x+sw,fl.y);ctx.stroke();ctx.fillStyle=fl.c;for(let p=0;p<5;p++){const a=(p/5)*Math.PI*2+t*0.001;ctx.beginPath();ctx.arc(fl.x+sw+Math.cos(a)*3,fl.y+Math.sin(a)*3,2.5,0,Math.PI*2);ctx.fill();}ctx.fillStyle='#ffe066';ctx.beginPath();ctx.arc(fl.x+sw,fl.y,1.5,0,Math.PI*2);ctx.fill();});}
+
+// Dragonflies
+const dfs=[];for(let i=0;i<3;i++)dfs.push({x:Math.random()*W,y:H*0.3+Math.random()*H*0.3,vx:(Math.random()-0.5)*1.5,vy:(Math.random()-0.5)*0.8,wp:Math.random()*100});
+function drawDF(){dfs.forEach(function(d){d.x+=d.vx+Math.sin(t*0.005+d.wp)*0.5;d.y+=d.vy+Math.cos(t*0.004+d.wp)*0.3;if(d.x>W+20)d.x=-20;if(d.x<-20)d.x=W+20;if(d.y>H*0.7)d.vy=-Math.abs(d.vy);if(d.y<H*0.15)d.vy=Math.abs(d.vy);const wf=Math.sin(t*0.15+d.wp)*8;ctx.fillStyle='rgba(60,60,80,0.7)';ctx.beginPath();ctx.ellipse(d.x,d.y,8,2,Math.atan2(d.vy,d.vx),0,Math.PI*2);ctx.fill();ctx.fillStyle='rgba(180,210,240,0.35)';ctx.beginPath();ctx.ellipse(d.x-2,d.y-wf*0.5,10,3,-0.3,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(d.x-2,d.y+wf*0.5,10,3,0.3,0,Math.PI*2);ctx.fill();});}
+
+function animate(){
+    t++;ctx.clearRect(0,0,W,H);
+    drawSky();drawSun();drawClouds();drawMountains();
+    ctx.fillStyle='rgba(255,248,230,0.02)';for(let x=0;x<W;x+=30){ctx.fillRect(x+Math.sin(t*0.005+x*0.02)*8,H*0.45,20,H*0.15);}
+    drawRiceFields();drawTrack();drawPath();drawPoles();updateTrain();drawTrain();drawMailbox();drawFG();drawDF();
+    ctx.fillStyle='rgba(255,220,150,0.04)';ctx.fillRect(0,0,W,H);
+    requestAnimationFrame(animate);
+}
+animate();
+
+})();
+</script>
+</body>
+</html>
